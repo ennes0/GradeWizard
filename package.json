@@ -1,0 +1,23 @@
+{
+  "name": "whatsmygrade",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.tsx",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rimraf ./build",
+    "reinstall": "rimraf node_modules && npm install"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "expo-document-picker": "^13.0.2",
+    "react-native-svg": "^7.0.3",
+    "react-native-svg-charts": "^5.4.0"
+  },
+  "devDependencies": {
+    "rimraf": "^3.0.2"
+  }
+}
