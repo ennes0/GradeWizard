@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as Notifications from 'expo-notifications';
+import { quizApi } from '../../services/api';
 
 interface QuizQuestion {
   question: string;
@@ -86,18 +87,12 @@ export default function Quiz() {
 
       for (let i = 0; i < 5; i++) {
         try {
-          const response = await axios.get('http://192.168.1.199:8000/generate_quiz');
-          console.log(`Quiz ${i + 1} response:`, response.data); // Debug log
-
-          // Sadece data kısmını al
-          const quizData = {
-            question: response.data.question,
-            options: response.data.options,
-            correctAnswer: response.data.correctAnswer
-          };
-
-          newQuizzes.push(quizData);
-
+          const quizData = await quizApi.fetchQuizQuestion();
+          newQuizzes.push({
+            question: quizData.question,
+            options: quizData.options,
+            correctAnswer: quizData.correctAnswer
+          });
         } catch (error) {
           console.error(`Error fetching question ${i + 1}:`, error);
           throw error;
