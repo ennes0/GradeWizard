@@ -175,7 +175,7 @@ const GradePrediction = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post("http://192.168.1.199:8000/generate_questions", formData);
+      const response = await axios.post("https://gradewizard.onrender.com/generate_questions", formData);
       console.log("API Response:", response.data); // Debug log
       
       if (response.data?.questions && response.data.questions.length > 0) {
@@ -297,7 +297,7 @@ const GradePrediction = () => {
   const submitPrediction = async (finalAnswers) => {
     setLoading(true);
     try {
-      const response = await axios.post("http://192.168.1.199:8000/predict", {
+      const response = await axios.post("https://gradewizard.onrender.com/predict", {
         answers: finalAnswers,
         formData: formData
       });

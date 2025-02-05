@@ -72,7 +72,7 @@ export default function ResultScreen() {
   const getFeedback = async () => {
     setLoadingFeedback(true);
     try {
-      const response = await axios.post('http://35.160.120.126:8000/generate_feedback', {
+      const response = await axios.post('https://gradewizard.onrender.com/generate_feedback', {
         grade: Number(grade),
         studyHours: Number(studyHours),
         motivation: Number(motivation),

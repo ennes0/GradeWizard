@@ -70,7 +70,7 @@ export default function Quiz() {
 
   const fetchQuizQuestion = async () => {
     try {
-      const response = await axios.get('http://192.168.1.199:8000/generate_quiz');
+      const response = await axios.get('https://gradewizard.onrender.com/generate_quiz');
       console.log('Quiz API Response:', response.data);
       return response.data;
     } catch (error) {

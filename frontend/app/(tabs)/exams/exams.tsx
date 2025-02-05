@@ -249,7 +249,7 @@ export default function ExamsScreen() {
         (new Date(exam.examDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
       );
   
-      const response = await fetch('http://192.168.1.199:8000/generate_study_plan', {
+      const response = await fetch('https://gradewizard.onrender.com/generate_study_plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
