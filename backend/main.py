@@ -584,17 +584,10 @@ Important:
         logger.error(f"Quiz generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/")
-async def root():
-    return {"message": "Grade Prediction API is running!"}
-
-# Add health check endpoint
-    }
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": str(datetime.now())}
 
-# Add error handler
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     return JSONResponse(
@@ -605,25 +598,12 @@ async def http_exception_handler(request, exc):
         }
     )
 
-# Get port from environment variable
-port = int(os.environ.get("PORT", 8000))
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
-
-
 @app.get("/")
 async def root():
     return {"message": "Grade Prediction API is running!"}
 
 # Get port from environment variable
 port = int(os.environ.get("PORT", 8000))
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
-
 
 if __name__ == "__main__":
     import uvicorn
