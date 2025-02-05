@@ -10,6 +10,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 import pandas as pd
 import pickle  # Add this import
+from datetime import datetime
+from fastapi.responses import JSONResponse
+import traceback
 
 # Logger ayarları
 logging.basicConfig(level=logging.INFO)
@@ -254,8 +257,8 @@ async def predict_grade(answers: AnswerInput):
         logger.error(f"Value Error in prediction: {str(ve)}")
         raise HTTPException(status_code=400, detail=f"Invalid input values: {str(ve)}")
     except Exception as e:
-        logger.error(f"Prediction Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Prediction Error: {str(e)}")
+        logger.error(f"Prediction Error: {str(e)}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/generate_study_plan")
 async def generate_study_plan(request: StudyPlanRequest):
@@ -357,12 +360,15 @@ async def generate_study_plan(request: StudyPlanRequest):
             "• Prepare your study environment\n"
             "• Keep water and snacks nearby\n"
             "• Silence your phone\n"
-            "• Take a 10-minute break every 45 minutes\n"
+            "• Prepare your study environment\n"
             "• Take notes of what you've learned\n"
             "• Summarize at the end of the day\n"
             "• Review the plan for the next day\n\n"
             "💡 REMEMBER\n"
             "• Regular review is the key to success\n"
+            "• Review the plan for the next day\n\n"
+            "• Don't skip your breaks\n"
+            "• Do mini quizzes daily\n"
             "• Note down topics you find difficult\n"
             "• Don't skip your breaks\n"
             "• Do mini quizzes daily\n"
@@ -577,6 +583,35 @@ Important:
     except Exception as e:
         logger.error(f"Quiz generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/")
+async def root():
+    return {"message": "Grade Prediction API is running!"}
+
+# Add health check endpoint
+    }
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": str(datetime.now())}
+
+# Add error handler
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": str(exc.detail),
+            "status_code": exc.status_code
+        }
+    )
+
+# Get port from environment variable
+port = int(os.environ.get("PORT", 8000))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+
 
 @app.get("/")
 async def root():
