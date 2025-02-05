@@ -18,16 +18,36 @@ import traceback
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Define allowed origins
+ALLOWED_ORIGINS = [
+    "http://localhost:19006",      # Expo dev client
+    "http://localhost:19000",      # Expo dev
+    "exp://localhost:19000",       # Expo Go
+    "https://35.160.120.126.onrender.com",  # Production backend
+    "http://192.168.1.199:8000",  # Local network
+    "http://192.168.1.199:19006", # Local network Expo
+]
+
 app = FastAPI()
 
-# CORS Middleware ekleme (Frontend erişimi için)
+# Updated CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Gerekirse belirli frontend domainlerini ekleyebilirsin
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    max_age=86400,  # Cache CORS preflight requests for 24 hours
 )
+
+# Add security headers middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
 
 # Google API Anahtarı (Çevresel değişkenden alınır, güvenlik için)
 GOOGLE_API_KEY = "AIzaSyDpmmHMf431buMxiaD_pmRZgJeI6BuOtk0"
