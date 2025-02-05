@@ -1,5 +1,5 @@
 const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://35.160.120.126.onrender.com'
+  ? 'https://gradewizard.onrender.com'
   : 'http://192.168.1.199:8000';
 
 export const api = {
