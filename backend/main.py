@@ -31,23 +31,27 @@ GOOGLE_API_KEY = "AIzaSyDpmmHMf431buMxiaD_pmRZgJeI6BuOtk0"
 if not GOOGLE_API_KEY:
     raise ValueError("GOOGLE_API_KEY environment variable is not set")
 
-# Kaydedilmiş not tahmini modelini yükle
+# Create a simple model if loading fails
+def create_simple_model():
+    from sklearn.ensemble import RandomForestRegressor
+    model = RandomForestRegressor(
+        n_estimators=100,
+        max_depth=5,
+        random_state=42
+    )
+    # Train with dummy data
+    X = np.random.random((1000, 15))  # 15 features
+    y = np.random.random(1000) * 100   # Target grades 0-100
+    model.fit(X, y)
+    return model
+
+# Try to load model or create new one
 try:
     with open("model.pkl", 'rb') as f:
         model = pickle.load(f)
 except Exception as e:
-    print(f"Error loading model: {e}")
-    # Fallback basit model
-    model = GradientBoostingRegressor(
-        n_estimators=100,
-        learning_rate=0.1,
-        max_depth=3,
-        random_state=42
-    )
-    # Basit veri ile eğit
-    X = np.random.random((100, 15))
-    y = np.random.random(100) * 100
-    model.fit(X, y)
+    print(f"Error loading model, creating new one: {e}")
+    model = create_simple_model()
 
 # Veri modelleri
 class UserInput(BaseModel):
@@ -580,6 +584,11 @@ async def root():
 
 # Get port from environment variable
 port = int(os.environ.get("PORT", 8000))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+
 
 if __name__ == "__main__":
     import uvicorn
