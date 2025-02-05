@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import mean_absolute_error
+import pickle
 
 # Genişletilmiş eğitim verisi: Her ana konu için 3 alt konu
 data = {
@@ -81,3 +82,7 @@ features = X.columns
 print("\n📊 Özellik Önemi Sıralaması:")
 for feature, importance in sorted(zip(features, feature_importances), key=lambda x: x[1], reverse=True):
     print(f"{feature}: {importance:.4f}")
+
+# Modeli pickle ile kaydet
+with open('model.pkl', 'wb') as f:
+    pickle.dump(best_model, f)
