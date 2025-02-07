@@ -1,27 +1,100 @@
+# Version control
 .git
 .github
-node_modules
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules/
 npm-debug.*
-.*
+yarn-debug.*
+yarn-error.*
+.yarn/
+.pnp.*
+.npm
+
+# Build outputs
+dist/
+build/
+web-build/
+web-report/
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+*.sublime*
+.project
+.settings/
+
+# Debug and logs
+*.log
+logs/
+coverage/
+.coverage
+.nyc_output
+
+# Test files
+__tests__/
+__mocks__/
+*.test.js
+*.spec.js
+*.test.tsx
+*.spec.tsx
+
+# Documentation
+docs/
+*.md
+README*
+CHANGELOG*
+LICENSE*
+CONTRIBUTING*
+
+# Config files
+.babelrc
+.eslintrc*
+.prettierrc*
+.flowconfig
+tsconfig.*
+*.config.js
+metro.config.*
+
+# Cache
+.cache/
+.eslintcache
+.env*
+*.env.*
+
+# Media and assets not needed for build
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.psd
+*.ai
+*.sketch
+
+# Mobile specific
+*.keystore
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
 *.orig.*
-web-build/
-web-report/
-.DS_Store
-.env
-.env.*
-*.log
-coverage
-*.md
-__tests__
-__mocks__
-docs
-README.md
-CHANGELOG.md
-LICENSE
-*.test.js
-*.spec.js
+*.ipa
+*.apk
+
+# Temp files
+tmp/
+temp/
+.tmp/
+*.tmp
+*.bak
+
+# OS generated
+Thumbs.db
+ehthumbs.db
+Desktop.ini
