@@ -8,11 +8,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest --watchAll",
-    "postinstall": "node ./scripts/postinstall.js",
-    "build:ios": "expo build:ios",
-    "build:android": "expo build:android",
-    "eas-build-pre-install": "npm config set prefix=$(pwd)/npm-global"
+    "prebuild": "npx expo prebuild --clean",
+    "postinstall": "node ./scripts/postinstall.js"
   },
   "jest": {
     "preset": "jest-expo"

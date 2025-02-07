@@ -39,16 +39,14 @@
       "favicon": "./assets/images/logo.png"
     },
     "plugins": [
-      "expo-router",
-      "expo-localization",
+      [
+        "expo-router"
+      ],
       [
         "expo-notifications",
         {
           "icon": "./assets/images/logo.png",
-          "color": "#51B402",
-          "sounds": [
-            "notification.wav"
-          ]
+          "color": "#51B402"
         }
       ]
     ],
@@ -60,8 +58,7 @@
       "color": "#51B402",
       "iosDisplayInForeground": true,
       "androidMode": "default",
-      "androidCollapsedTitle": "Grade Wizard",
-      "sound": "notification"
+      "androidCollapsedTitle": "Grade Wizard"
     },
     "locales": {
       "tr": "./translations/tr.json",
