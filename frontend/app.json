@@ -19,7 +19,9 @@
       "buildNumber": "1.0.0",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["remote-notification"],
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
         "NSCameraUsageDescription": "This app uses the camera to let you pick a profile photo.",
         "NSPhotoLibraryUsageDescription": "This app uses the photo library to let you pick a profile photo."
       }
@@ -28,7 +30,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo0.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.enesoy.gradwizard"
     },
     "web": {
       "bundler": "metro",
@@ -43,7 +46,9 @@
         {
           "icon": "./assets/images/logo.png",
           "color": "#51B402",
-          "sounds": ["./assets/sounds/notification.wav"]
+          "sounds": [
+            "notification.wav"
+          ]
         }
       ]
     ],
@@ -56,7 +61,7 @@
       "iosDisplayInForeground": true,
       "androidMode": "default",
       "androidCollapsedTitle": "Grade Wizard",
-      "sound": "notification.wav"
+      "sound": "notification"
     },
     "locales": {
       "tr": "./translations/tr.json",

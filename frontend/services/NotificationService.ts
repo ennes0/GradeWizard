@@ -321,3 +321,13 @@ async function checkNotificationPermissions() {
 export async function cancelAllNotifications() {
   await Notifications.cancelAllScheduledNotificationsAsync();
 }
+
+export async function scheduleNotification(content: any) {
+  return await Notifications.scheduleNotificationAsync({
+    content: {
+      ...content,
+      sound: 'notification' // .wav uzantısını kaldır
+    },
+    trigger: null
+  });
+}
