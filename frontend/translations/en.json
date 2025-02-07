@@ -1,0 +1,13 @@
+{
+  "common": {
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "save": "Save",
+    "loading": "Loading..."
+  },
+  "settings": {
+    "language": "Language",
+    "notifications": "Notifications",
+    "about": "About"
+  }
+}

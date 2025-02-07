@@ -40,6 +40,7 @@ app.add_middleware(
     max_age=86400,  # Cache CORS preflight requests for 24 hours
 )
 
+
 # Add security headers middleware
 @app.middleware("http")
 async def add_security_headers(request, call_next):

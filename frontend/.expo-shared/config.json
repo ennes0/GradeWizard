@@ -1,0 +1,14 @@
+{
+  "githubUrl": "https://github.com/ennes0/GradeWizard",
+  "privacy": "unlisted",
+  "sdkVersion": "50.0.0",
+  "platforms": [
+    "ios",
+    "android"
+  ],
+  "permissions": [
+    "READ_EXTERNAL_STORAGE",
+    "WRITE_EXTERNAL_STORAGE",
+    "NOTIFICATIONS"
+  ]
+}

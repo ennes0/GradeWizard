@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Grad Wizard",
-    "slug": "Grad Wizard",
+    "slug": "gradwizard",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
@@ -14,7 +14,15 @@
       "backgroundColor": "#0e1b0d"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.enesoy.gradwizard",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": ["remote-notification"],
+        "NSCameraUsageDescription": "This app uses the camera to let you pick a profile photo.",
+        "NSPhotoLibraryUsageDescription": "This app uses the photo library to let you pick a profile photo."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -33,7 +41,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/logo.png", 
+          "icon": "./assets/images/logo.png",
           "color": "#51B402",
           "sounds": ["./assets/sounds/notification.wav"]
         }
@@ -43,15 +51,24 @@
       "typedRoutes": true
     },
     "notification": {
-      "icon": "./assets/images/logo.png", 
+      "icon": "./assets/images/logo.png",
       "color": "#51B402",
       "iosDisplayInForeground": true,
       "androidMode": "default",
-      "androidCollapsedTitle": "Grade Wizard"
+      "androidCollapsedTitle": "Grade Wizard",
+      "sound": "notification.wav"
     },
     "locales": {
       "tr": "./translations/tr.json",
       "en": "./translations/en.json"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "c7af8250-2584-41a8-bf2c-1df4d81266bf"
+      }
     }
   }
 }

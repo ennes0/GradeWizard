@@ -6,8 +6,8 @@
   "scripts": {
     "start": "HTTPS=true react-scripts start",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rimraf ./build",
-    "reinstall": "rimraf node_modules && npm install"
+    "clean": "rimraf ./node_modules && rimraf ./build",
+    "reinstall": "npm run clean && npm install --cache D:\\npm-cache"
   },
   "author": "",
   "license": "ISC",
@@ -19,5 +19,8 @@
   },
   "devDependencies": {
     "rimraf": "^3.0.2"
+  },
+  "config": {
+    "cache-location": "D:\\npm-cache"
   }
 }
