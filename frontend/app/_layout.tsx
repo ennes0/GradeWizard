@@ -52,51 +52,6 @@ const checkOnboarding = async () => {
     router.replace('/onboarding');
   };
 
-  useEffect(() => {
-    registerForPushNotificationsAsync();
-    
-    // Handle received notifications
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      const { type } = notification.request.content.data;
-      // Handle different notification types
-      switch(type) {
-        case 'motivational':
-          // Maybe update stats or streak
-          break;
-        case 'study_reminder':
-          // Maybe show study timer
-          break;
-        case 'exam_reminder':
-          // Maybe show exam details
-          break;
-      }
-    });
-
-    // Handle notification response
-    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      const { type } = response.notification.request.content.data;
-      // Navigate based on notification type
-      switch(type) {
-        case 'motivational':
-          router.push('/(tabs)/GradePrediction');
-          break;
-        case 'study_reminder':
-          router.push('/(tabs)/Home');
-          break;
-        case 'exam_reminder':
-          router.push('/(tabs)/exams/exams');
-          break;
-      }
-    });
-
-    // Schedule daily motivation
-    scheduleMotivationalNotification();
-
-    return () => {
-      Notifications.removeNotificationSubscription(notificationListener);
-      Notifications.removeNotificationSubscription(responseListener);
-    };
-  }, []);
 
   if (isLoading) {
     return null;
