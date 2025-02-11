@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AvatarPicker } from '../../components/AvatarPicker';
 import { scheduleAllNotifications, cancelAllNotifications } from '../../services/NotificationService';
 import { useLanguage } from '../../contexts/LanguageContext'; // Add this import
+import {BannerAd, BannerAdSize, TestIds} from 'react-native-google-mobile-ads';
 
 export default function Profile() {
   const { t, language, changeLanguage } = useLanguage();
@@ -278,6 +279,16 @@ export default function Profile() {
               <Text style={styles.settingTitle}>About</Text>
               
 
+            </View>
+            <FontAwesome5 name="chevron-right" size={16} color="#666" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => router.push('/adtest')}
+          >
+            <View style={styles.settingLeft}>
+              <FontAwesome5 name="ad" size={20} color="#388E3C" />
+              <Text style={styles.settingTitle}>Test Ads</Text>
             </View>
             <FontAwesome5 name="chevron-right" size={16} color="#666" />
           </TouchableOpacity>

@@ -39,14 +39,27 @@
       "favicon": "./assets/images/logo.png"
     },
     "plugins": [
-      [
-        "expo-router"
-      ],
+      "expo-router",
       [
         "expo-notifications",
         {
           "icon": "./assets/images/logo.png",
           "color": "#51B402"
+        }
+      ],
+      [
+        "expo-ads-admob",
+        {
+          "userTrackingPermission": "This identifier will be used to deliver personalized ads to you.",
+          "androidAdUnitId": "ca-app-pub-7510384238146981~7946410411",
+          "iosAdUnitId": "ca-app-pub-7510384238146981~7946410411"
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "iosAppId": "ca-app-pub-7510384238146981~7946410411",
+          "androidAppId": "ca-app-pub-7510384238146981~7946410411"
         }
       ]
     ],

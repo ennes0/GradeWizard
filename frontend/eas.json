@@ -12,6 +12,7 @@
         "buildType": "apk"
       },
       "ios": {
+        "buildConfiguration": "Debug",
         "resourceClass": "m1-medium"
       },
       "env": {

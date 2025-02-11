@@ -86,7 +86,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.gradwizard"
+    namespace 'com.enesoy.gradwizard'
     defaultConfig {
         applicationId 'com.enesoy.gradwizard'
         minSdkVersion rootProject.ext.minSdkVersion

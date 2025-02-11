@@ -23,6 +23,7 @@ export default function TabLayout() {
   return (
     <View style={styles.container}>
       <Tabs
+      initialRouteName="Home"
         screenOptions={{
           headerStyle: {
             backgroundColor: '#E8F5E9',
