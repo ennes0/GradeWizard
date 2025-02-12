@@ -24,6 +24,9 @@
         ],
         "NSCameraUsageDescription": "This app uses the camera to let you pick a profile photo.",
         "NSPhotoLibraryUsageDescription": "This app uses the photo library to let you pick a profile photo."
+      },
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~1458002511"
       }
     },
     "android": {
@@ -31,7 +34,10 @@
         "foregroundImage": "./assets/images/logo0.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.enesoy.gradwizard"
+      "package": "com.enesoy.gradwizard",
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -41,25 +47,9 @@
     "plugins": [
       "expo-router",
       [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/logo.png",
-          "color": "#51B402"
-        }
-      ],
-      [
         "expo-ads-admob",
         {
-          "userTrackingPermission": "This identifier will be used to deliver personalized ads to you.",
-          "androidAdUnitId": "ca-app-pub-7510384238146981~7946410411",
-          "iosAdUnitId": "ca-app-pub-7510384238146981~7946410411"
-        }
-      ],
-      [
-        "react-native-google-mobile-ads",
-        {
-          "iosAppId": "ca-app-pub-7510384238146981~7946410411",
-          "androidAppId": "ca-app-pub-7510384238146981~7946410411"
+          "userTrackingPermission": "This identifier will be used to deliver personalized ads to you."
         }
       ]
     ],

@@ -1,36 +1,45 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { BannerAd, BannerAdSize, TestIds, InterstitialAd } from 'react-native-google-mobile-ads';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { AdMobBanner } from 'expo-ads-admob';
 
-const AdTestScreen = () => {
+function AdTestScreen() {
+  const bannerTestID = Platform.select({
+    ios: 'ca-app-pub-3940256099942544/2934735716',
+    android: 'ca-app-pub-3940256099942544/6300978111',
+  });
+
+  const handleError = (error: any) => {
+    console.error("Ad Error:", error);
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Ad Test Page</Text>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Banner Ad Test</Text>
-        <BannerAd
-          unitId={TestIds.BANNER}
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-          requestOptions={{
-            requestNonPersonalizedAdsOnly: true,
-          }}
-        />
-      </View>
+    <View style={styles.container}>
+      <ScrollView>
+        <Text style={styles.title}>Ad Test Page</Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Large Banner Ad Test</Text>
-        <BannerAd
-          unitId={TestIds.BANNER}
-          size={BannerAdSize.MEDIUM_RECTANGLE}
-          requestOptions={{
-            requestNonPersonalizedAdsOnly: true,
-          }}
-        />
-      </View>
-    </ScrollView>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Banner Ad Test</Text>
+          <AdMobBanner
+            bannerSize="banner"
+            adUnitID={bannerTestID || ''}
+            servePersonalizedAds={true}
+            onDidFailToReceiveAdWithError={handleError}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Large Banner Ad Test</Text>
+          <AdMobBanner
+            bannerSize="mediumRectangle"
+            adUnitID={bannerTestID || ''}
+            servePersonalizedAds={true}
+            onDidFailToReceiveAdWithError={handleError}
+          />
+        </View>
+      </ScrollView>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
