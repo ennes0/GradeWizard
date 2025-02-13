@@ -1,0 +1,13 @@
+{
+  "common": {
+    "continue": "Devam Et",
+    "cancel": "İptal",
+    "save": "Kaydet",
+    "loading": "Yükleniyor..."
+  },
+  "settings": {
+    "language": "Dil",
+    "notifications": "Bildirimler",
+    "about": "Hakkında"
+  }
+}
