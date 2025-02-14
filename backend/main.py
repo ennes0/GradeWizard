@@ -4,21 +4,23 @@ from pydantic import BaseModel
 import joblib
 import numpy as np
 import requests
-import random  # Add this import
-import json  # Add this import
+import random
+import json
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import pandas as pd
-import pickle  # Add this import
+import pickle
 from datetime import datetime
 from fastapi.responses import JSONResponse
 import traceback
+from cachetools import TTLCache, cached
+from fastapi.middleware.gzip import GZipMiddleware
 
-# Logger settings and cache configuration
+# Logger settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from cachetools import TTLCache, cached
+# Cache configuration
 gemini_cache = TTLCache(maxsize=100, ttl=3600)
 
 # Define allowed origins
@@ -44,7 +46,6 @@ app.add_middleware(
     expose_headers=["*"]  # Allow all response headers to be exposed
 )
 
-from fastapi.middleware.gzip import GZipMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # Add security headers middleware
@@ -569,9 +570,9 @@ Important:
         
         # Clean and parse JSON
         json_str = generated_text.strip()
-        if json_str.startswith('```json'):
+        if (json_str.startswith('```json')):
             json_str = json_str[7:-3]
-        elif json_str.startswith('```'):
+        elif (json_str.startswith('```')):
             json_str = json_str[3:-3]
             
         quiz_data = json.loads(json_str)
