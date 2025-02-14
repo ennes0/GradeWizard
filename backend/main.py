@@ -14,19 +14,28 @@ from datetime import datetime
 from fastapi.responses import JSONResponse
 import traceback
 from fastapi.middleware.gzip import GZipMiddleware
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from concurrent.futures import ThreadPoolExecutor
 
-# Try to import cachetools, fallback to no caching if not available
-try:
-    from cachetools import TTLCache, cached
-    # Cache configuration
-    gemini_cache = TTLCache(maxsize=100, ttl=3600)
-    def cache_decorator(func):
-        return cached(gemini_cache)(func)
-except ImportError:
-    logger.warning("cachetools not available, running without cache")
-    # Provide a no-op decorator if cachetools is not available
-    def cache_decorator(func):
-        return func
+# Remove cachetools imports and setup session for requests
+session = requests.Session()
+retry_strategy = Retry(
+    total=3,
+    backoff_factor=0.1,
+    status_forcelist=[429, 500, 502, 503, 504],
+)
+adapter = HTTPAdapter(
+    pool_connections=100,
+    pool_maxsize=100,
+    max_retries=retry_strategy,
+    pool_block=False
+)
+session.mount("http://", adapter)
+session.mount("https://", adapter)
+
+# Thread pool for concurrent operations
+thread_pool = ThreadPoolExecutor(max_workers=10)
 
 # Logger settings
 logging.basicConfig(level=logging.INFO)
@@ -42,7 +51,12 @@ ALLOWED_ORIGINS = [
     "http://192.168.1.199:19006", # Local network Expo
 ]
 
-app = FastAPI()
+# Configure FastAPI with optimized settings
+app = FastAPI(
+    default_response_class=JSONResponse,
+    docs_url=None,  # Disable docs in production
+    redoc_url=None  # Disable redoc in production
+)
 
 # Updated CORS middleware configuration
 app.add_middleware(
@@ -55,7 +69,12 @@ app.add_middleware(
     expose_headers=["*"]  # Allow all response headers to be exposed
 )
 
-app.add_middleware(GZipMiddleware, minimum_size=500)
+# Add compression middleware with optimized settings
+app.add_middleware(
+    GZipMiddleware,
+    minimum_size=500,
+    compresslevel=6  # Balance between compression ratio and speed
+)
 
 # Add security headers middleware
 @app.middleware("http")
@@ -112,55 +131,44 @@ class StudyPlanRequest(BaseModel):
     totalDays: int
     hoursPerDay: int
 
-@cache_decorator
+# Optimize Gemini API calls
 def call_gemini_api(topic):
-    """Google Gemini 1.5 Flash API ile konu başlığından alt başlıklar üretir"""
+    """Optimized Gemini API call"""
     url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
     headers = {
         "Content-Type": "application/json",
         "Accept-Encoding": "gzip, deflate, br",
         "Connection": "keep-alive"
     }
-    # İngilizce prompt: konuya göre 3 önemli alt başlık üret
     payload = {
         "contents": [{
             "parts": [{
-                "text": f"""Please generate the 3 most important subtopics that need to be learned for the subject "{topic}".
-Each subtopic should be framed as a learning objective and include:
-- Fundamental concepts and definitions
-- Application and problem-solving methods
-- Advanced topics and connections
-Please list each subtopic on a single line without using bullet points."""
+                "text": f"""Please generate the 3 most important subtopics for "{topic}"."""
             }]
         }],
         "generationConfig": {
             "temperature": 0.7,
-            "maxOutputTokens": 200
+            "maxOutputTokens": 200,
+            "topK": 40,
+            "topP": 0.8
         }
     }
+    
     try:
-        logger.info(f"Calling Gemini API with topic: {topic}")
-        response = requests.post(url, json=payload, headers=headers, params={"key": GOOGLE_API_KEY})
+        response = session.post(
+            url,
+            json=payload,
+            headers=headers,
+            params={"key": GOOGLE_API_KEY},
+            timeout=5  # Add timeout
+        )
         response.raise_for_status()
-        data = response.json()
-        logger.info(f"Gemini API response: {data}")
-
-        generated_text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        if not generated_text:
-            raise HTTPException(status_code=500, detail="No content in Gemini API response")
-
-        subtopics_list = [s.strip() for s in generated_text.split("\n") if s.strip()]
-        if len(subtopics_list) < 3:
-            subtopics_list += ["Subtopic not available"] * (3 - len(subtopics_list))
-
-        return subtopics_list[:3]
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Gemini API RequestException: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Gemini API Error: {str(e)}")
+        return response.json()
     except Exception as e:
-        logger.error(f"Error processing Gemini API response: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error processing Gemini API response: {str(e)}")
+        logger.error(f"API call failed: {e}")
+        raise
 
+# Optimize the question generation endpoint
 @app.post("/generate_questions")
 async def generate_questions(user_input: UserInput):
     """Konu başlıklarına göre alt başlıklar ve sorular üretir"""
@@ -170,52 +178,28 @@ async def generate_questions(user_input: UserInput):
             if topic.strip()
         ]
         
+        # Use thread pool for concurrent API calls
+        futures = [
+            thread_pool.submit(call_gemini_api, topic)
+            for topic in topics
+        ]
+        
         all_questions = []
-        for topic in topics:
-            prompt = f"""
-For the topic "{topic}", generate 3 important assessment questions.
-Append "how well do you know it?" at the end of each question.
-Example format:
-- For integration, how well do you know the relationship between derivatives and integrals?
-- For integration, how well do you know area calculation?
-- For integration, how well do you know volume calculation?
-            """
-            
-            url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
-            headers = {"Content-Type": "application/json"}
-            payload = {
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "temperature": 0.7,
-                    "maxOutputTokens": 300,
-                    "topP": 0.8,
-                    "topK": 40,
-                },
-            }
-            
-            response = requests.post(url, json=payload, headers=headers, params={"key": GOOGLE_API_KEY})
-            response.raise_for_status()
-            data = response.json()
-            
-            generated_text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            if not generated_text:
-                raise HTTPException(status_code=500, detail="API yanıt vermedi")
-            
-            # Clean and format questions
-            questions = [
-                q.strip().replace('- ', '').strip()
-                for q in generated_text.split('\n')
-                if q.strip() and 'how well do you know' in q.lower()
-            ]
-            
-            # Ensure we have exactly 3 questions per topic
-            while len(questions) < 3:
-                questions.append(f"How well do you know the topic {topic} in general?")
-            
-            all_questions.extend(questions[:3])
+        for future in futures:
+            try:
+                result = future.result(timeout=10)
+                questions = [
+                    q.strip()
+                    for q in result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "").split("\n")
+                    if q.strip()
+                ]
+                all_questions.extend(questions[:3])
+            except Exception as e:
+                logger.error(f"Failed to process questions: {e}")
+                continue
 
         if not all_questions:
-            raise HTTPException(status_code=500, detail="Sorular oluşturulamadı")
+            raise HTTPException(status_code=500, detail="Failed to generate questions")
 
         return {
             "questions": all_questions,
@@ -647,15 +631,19 @@ async def root():
 # Get port from environment variable
 port = int(os.environ.get("PORT", 8000))
 
+# Optimize server settings
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=port,
-        reload=True,
-        workers=4,  # Increase worker processes
-        limit_concurrency=100,  # Limit concurrent connections
-        timeout_keep_alive=30,  # Reduce keep-alive timeout
-        access_log=False  # Disable access logs for better performance
+        reload=False,  # Disable reload in production
+        workers=4,
+        limit_concurrency=100,
+        timeout_keep_alive=30,
+        access_log=False,
+        proxy_headers=True,
+        forwarded_allow_ips='*',
+        http='h11'  # Use h11 for better performance
     )
