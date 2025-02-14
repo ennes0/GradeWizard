@@ -14,18 +14,13 @@ from datetime import datetime
 from fastapi.responses import JSONResponse
 import traceback
 
-# Logger ayarları
+# Logger settings and cache configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-<<<<<<< HEAD
-# Add cache configuration after the logger setup
 from cachetools import TTLCache, cached
-# Cache for 1 hour, max 100 items
 gemini_cache = TTLCache(maxsize=100, ttl=3600)
 
-=======
->>>>>>> f6268b3023438cac41fe56306ca39537224d197a
 # Define allowed origins
 ALLOWED_ORIGINS = [
     "http://localhost:19006",      # Expo dev client
@@ -46,17 +41,11 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     max_age=86400,  # Cache CORS preflight requests for 24 hours
-<<<<<<< HEAD
     expose_headers=["*"]  # Allow all response headers to be exposed
 )
 
-# Add response compression middleware after CORS
 from fastapi.middleware.gzip import GZipMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=500)
-=======
-)
-
->>>>>>> f6268b3023438cac41fe56306ca39537224d197a
 
 # Add security headers middleware
 @app.middleware("http")
@@ -113,7 +102,6 @@ class StudyPlanRequest(BaseModel):
     totalDays: int
     hoursPerDay: int
 
-<<<<<<< HEAD
 @cached(gemini_cache)
 def call_gemini_api(topic):
     """Google Gemini 1.5 Flash API ile konu başlığından alt başlıklar üretir"""
@@ -123,12 +111,6 @@ def call_gemini_api(topic):
         "Accept-Encoding": "gzip, deflate, br",
         "Connection": "keep-alive"
     }
-=======
-def call_gemini_api(topic):
-    """Google Gemini 1.5 Flash API ile konu başlığından alt başlıklar üretir"""
-    url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
-    headers = {"Content-Type": "application/json"}
->>>>>>> f6268b3023438cac41fe56306ca39537224d197a
     # İngilizce prompt: konuya göre 3 önemli alt başlık üret
     payload = {
         "contents": [{
@@ -508,8 +490,7 @@ Write 2-3 bullet points for each section. Use a positive and constructive tone.
         logger.error(f"Feedback Generation Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Feedback Generation Error: {str(e)}")
 
-<<<<<<< HEAD
-# Quiz categories and subtopics
+# Quiz categories and topics
 QUIZ_CATEGORIES = {
     "history": {
         "topics": ["World History", "Ancient Civilizations", "Modern History", "Military History", "Historical Figures"],
@@ -534,33 +515,6 @@ QUIZ_CATEGORIES = {
     "culture": {
         "topics": ["World Traditions", "Global Cuisine", "Festivals", "Mythology", "Languages"],
         "difficulty": ["easy", "medium", "hard"]
-=======
-# Quiz kategorileri ve alt konuları
-QUIZ_CATEGORIES = {
-    "tarih": {
-        "topics": ["Türk Tarihi", "Dünya Tarihi", "İnkılaplar", "Medeniyetler", "Önemli Şahsiyetler"],
-        "difficulty": ["kolay", "orta", "zor"]
-    },
-    "bilim": {
-        "topics": ["Fizik", "Kimya", "Biyoloji", "Astronomi", "Teknoloji", "Buluşlar"],
-        "difficulty": ["kolay", "orta", "zor"]
-    },
-    "coğrafya": {
-        "topics": ["Dünya", "Türkiye", "İklim", "Yerşekilleri", "Ekonomik Coğrafya"],
-        "difficulty": ["kolay", "orta", "zor"]
-    },
-    "sanat": {
-        "topics": ["Resim", "Müzik", "Sinema", "Edebiyat", "Mimari"],
-        "difficulty": ["kolay", "orta", "zor"]
-    },
-    "spor": {
-        "topics": ["Futbol", "Basketbol", "Olimpiyatlar", "Spor Tarihi", "Başarılar"],
-        "difficulty": ["kolay", "orta", "zor"]
-    },
-    "kültür": {
-        "topics": ["Gelenekler", "Yemekler", "Festivaller", "Mitoloji", "Diller"],
-        "difficulty": ["kolay", "orta", "zor"]
->>>>>>> f6268b3023438cac41fe56306ca39537224d197a
     }
 }
 
@@ -685,7 +639,6 @@ port = int(os.environ.get("PORT", 8000))
 
 if __name__ == "__main__":
     import uvicorn
-<<<<<<< HEAD
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
@@ -696,6 +649,3 @@ if __name__ == "__main__":
         timeout_keep_alive=30,  # Reduce keep-alive timeout
         access_log=False  # Disable access logs for better performance
     )
-=======
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
->>>>>>> f6268b3023438cac41fe56306ca39537224d197a
