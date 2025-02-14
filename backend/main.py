@@ -13,15 +13,24 @@ import pickle
 from datetime import datetime
 from fastapi.responses import JSONResponse
 import traceback
-from cachetools import TTLCache, cached
 from fastapi.middleware.gzip import GZipMiddleware
+
+# Try to import cachetools, fallback to no caching if not available
+try:
+    from cachetools import TTLCache, cached
+    # Cache configuration
+    gemini_cache = TTLCache(maxsize=100, ttl=3600)
+    def cache_decorator(func):
+        return cached(gemini_cache)(func)
+except ImportError:
+    logger.warning("cachetools not available, running without cache")
+    # Provide a no-op decorator if cachetools is not available
+    def cache_decorator(func):
+        return func
 
 # Logger settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Cache configuration
-gemini_cache = TTLCache(maxsize=100, ttl=3600)
 
 # Define allowed origins
 ALLOWED_ORIGINS = [
@@ -103,7 +112,7 @@ class StudyPlanRequest(BaseModel):
     totalDays: int
     hoursPerDay: int
 
-@cached(gemini_cache)
+@cache_decorator
 def call_gemini_api(topic):
     """Google Gemini 1.5 Flash API ile konu başlığından alt başlıklar üretir"""
     url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
