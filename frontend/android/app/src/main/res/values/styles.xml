@@ -5,7 +5,11 @@
     <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     <item name="colorPrimary">@color/colorPrimary</item>
     <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+<<<<<<< HEAD
     <item name="android:statusBarColor">#ffffff</item>
+=======
+    <item name="android:statusBarColor">#0e1b0d</item>
+>>>>>>> f6268b3023438cac41fe56306ca39537224d197a
   </style>
   <style name="ResetEditText" parent="@android:style/Widget.EditText">
     <item name="android:padding">0dp</item>
