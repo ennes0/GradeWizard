@@ -18,6 +18,11 @@ import traceback
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Add cache configuration after the logger setup
+from cachetools import TTLCache, cached
+# Cache for 1 hour, max 100 items
+gemini_cache = TTLCache(maxsize=100, ttl=3600)
+
 # Define allowed origins
 ALLOWED_ORIGINS = [
     "http://localhost:19006",      # Expo dev client
@@ -38,8 +43,12 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     max_age=86400,  # Cache CORS preflight requests for 24 hours
+    expose_headers=["*"]  # Allow all response headers to be exposed
 )
 
+# Add response compression middleware after CORS
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # Add security headers middleware
 @app.middleware("http")
@@ -96,10 +105,15 @@ class StudyPlanRequest(BaseModel):
     totalDays: int
     hoursPerDay: int
 
+@cached(gemini_cache)
 def call_gemini_api(topic):
     """Google Gemini 1.5 Flash API ile konu başlığından alt başlıklar üretir"""
     url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive"
+    }
     # İngilizce prompt: konuya göre 3 önemli alt başlık üret
     payload = {
         "contents": [{
@@ -479,31 +493,31 @@ Write 2-3 bullet points for each section. Use a positive and constructive tone.
         logger.error(f"Feedback Generation Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Feedback Generation Error: {str(e)}")
 
-# Quiz kategorileri ve alt konuları
+# Quiz categories and subtopics
 QUIZ_CATEGORIES = {
-    "tarih": {
-        "topics": ["Türk Tarihi", "Dünya Tarihi", "İnkılaplar", "Medeniyetler", "Önemli Şahsiyetler"],
-        "difficulty": ["kolay", "orta", "zor"]
+    "history": {
+        "topics": ["World History", "Ancient Civilizations", "Modern History", "Military History", "Historical Figures"],
+        "difficulty": ["easy", "medium", "hard"]
     },
-    "bilim": {
-        "topics": ["Fizik", "Kimya", "Biyoloji", "Astronomi", "Teknoloji", "Buluşlar"],
-        "difficulty": ["kolay", "orta", "zor"]
+    "science": {
+        "topics": ["Physics", "Chemistry", "Biology", "Astronomy", "Technology", "Inventions"],
+        "difficulty": ["easy", "medium", "hard"]
     },
-    "coğrafya": {
-        "topics": ["Dünya", "Türkiye", "İklim", "Yerşekilleri", "Ekonomik Coğrafya"],
-        "difficulty": ["kolay", "orta", "zor"]
+    "geography": {
+        "topics": ["World Geography", "Physical Geography", "Climate", "Landforms", "Economic Geography"],
+        "difficulty": ["easy", "medium", "hard"]
     },
-    "sanat": {
-        "topics": ["Resim", "Müzik", "Sinema", "Edebiyat", "Mimari"],
-        "difficulty": ["kolay", "orta", "zor"]
+    "arts": {
+        "topics": ["Painting", "Music", "Cinema", "Literature", "Architecture"],
+        "difficulty": ["easy", "medium", "hard"]
     },
-    "spor": {
-        "topics": ["Futbol", "Basketbol", "Olimpiyatlar", "Spor Tarihi", "Başarılar"],
-        "difficulty": ["kolay", "orta", "zor"]
+    "sports": {
+        "topics": ["Football", "Basketball", "Olympics", "Sports History", "Championships"],
+        "difficulty": ["easy", "medium", "hard"]
     },
-    "kültür": {
-        "topics": ["Gelenekler", "Yemekler", "Festivaller", "Mitoloji", "Diller"],
-        "difficulty": ["kolay", "orta", "zor"]
+    "culture": {
+        "topics": ["World Traditions", "Global Cuisine", "Festivals", "Mythology", "Languages"],
+        "difficulty": ["easy", "medium", "hard"]
     }
 }
 
@@ -628,4 +642,13 @@ port = int(os.environ.get("PORT", 8000))
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=port,
+        reload=True,
+        workers=4,  # Increase worker processes
+        limit_concurrency=100,  # Limit concurrent connections
+        timeout_keep_alive=30,  # Reduce keep-alive timeout
+        access_log=False  # Disable access logs for better performance
+    )

@@ -24,9 +24,6 @@
         ],
         "NSCameraUsageDescription": "This app uses the camera to let you pick a profile photo.",
         "NSPhotoLibraryUsageDescription": "This app uses the photo library to let you pick a profile photo."
-      },
-      "config": {
-        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~1458002511"
       }
     },
     "android": {
@@ -34,43 +31,21 @@
         "foregroundImage": "./assets/images/logo0.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.enesoy.gradwizard",
-      "config": {
-        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
-      }
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/logo.png"
+      "package": "com.enesoy.gradwizard"
     },
     "plugins": [
       "expo-router",
       [
-        "expo-ads-admob",
+        "expo-build-properties",
         {
-          "userTrackingPermission": "This identifier will be used to deliver personalized ads to you."
+          "ios": {
+            "useFrameworks": "static"
+          }
         }
-      ]
+      ],
+      "react-native-google-mobile-ads"
     ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "notification": {
-      "icon": "./assets/images/logo.png",
-      "color": "#51B402",
-      "iosDisplayInForeground": true,
-      "androidMode": "default",
-      "androidCollapsedTitle": "Grade Wizard"
-    },
-    "locales": {
-      "tr": "./translations/tr.json",
-      "en": "./translations/en.json"
-    },
     "extra": {
-      "router": {
-        "origin": false
-      },
       "eas": {
         "projectId": "c7af8250-2584-41a8-bf2c-1df4d81266bf"
       }

@@ -11,9 +11,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AvatarPicker } from '../../components/AvatarPicker';
 import { scheduleAllNotifications, cancelAllNotifications } from '../../services/NotificationService';
 import { useLanguage } from '../../contexts/LanguageContext'; // Add this import
-import {BannerAd, BannerAdSize, TestIds} from 'react-native-google-mobile-ads';
+
+
 
 export default function Profile() {
+  const adUnitId = 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
   const { t, language, changeLanguage } = useLanguage();
   const [userData, setUserData] = useState({
     name: '',
@@ -203,9 +205,9 @@ export default function Profile() {
           />
           <Text style={styles.userName}>{userData.name}</Text>
           {renderEducationInfo()}
+
         </View>
       </LinearGradient>
-
       <View style={styles.mainContent}>
         <View style={styles.statsGrid}>
           <StatCard icon="graduation-cap" value={stats.totalExams} label="Exams" />
