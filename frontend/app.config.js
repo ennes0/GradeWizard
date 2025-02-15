@@ -1,8 +1,9 @@
 module.exports = {
   name: 'Grad Wizard',
-  slug: 'gradwizard',
+  slug: 'gwizard',
   version: '1.0.0',
   orientation: 'portrait',
+  owner: "ennoo",
   icon: './assets/images/logo.png',
   userInterfaceStyle: 'automatic',
   android: {
@@ -43,7 +44,7 @@ module.exports = {
   ],
   extra: {
     eas: {
-      projectId: "c7af8250-2584-41a8-bf2c-1df4d81266bf"
+      projectId: "bfd6db33-c23c-40a9-aa02-3967402f33e5"
     }
   }
 };
