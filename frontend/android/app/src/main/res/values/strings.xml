@@ -1,9 +1,0 @@
-<resources>
-  <string name="app_name">Grad Wizard</string>
-  <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
-  <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
-<<<<<<< HEAD
-=======
-  <string name="expo_system_ui_user_interface_style" translatable="false">automatic</string>
->>>>>>> f6268b3023438cac41fe56306ca39537224d197a
-</resources>
