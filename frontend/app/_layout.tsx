@@ -6,10 +6,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import AnimatedTabBar from "../components/AnimatedTabBar";
 import * as Notifications from "expo-notifications";
 import { registerForPushNotificationsAsync, scheduleMotivationalNotification } from "../services/NotificationService";
-<<<<<<< HEAD
-import mobileAds from 'react-native-google-mobile-ads';
-=======
->>>>>>> f6268b3023438cac41fe56306ca39537224d197a
 
 export default function Layout() {
   const router = useRouter();

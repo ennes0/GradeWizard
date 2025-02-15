@@ -6,28 +6,67 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import mean_absolute_error
 import pickle
 
-# Genişletilmiş eğitim verisi: Her ana konu için 3 alt konu
-data = {
-    "Konu 1": [1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1],
-    "Konu 2": [1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0],
-    "Konu 3": [1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0],
-    # Konu 1'in alt konuları
-    "Konu 1 Alt 1": [1, 0.5, 1, 0, 0, 1, 1, 0.5, 1, 0, 1, 1, 0, 1, 1, 0, 0.5, 1, 0, 1],
-    "Konu 1 Alt 2": [1, 1, 0.5, 1, 0, 0, 0.5, 1, 0, 1, 0.5, 1, 0, 1, 1, 1, 0, 0, 1, 0.5],
-    "Konu 1 Alt 3": [1, 0, 0.5, 1, 1, 0, 1, 0.5, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0],
-    # Konu 2'nin alt konuları
-    "Konu 2 Alt 1": [1, 0.5, 1, 0, 0, 1, 1, 0.5, 1, 0, 1, 1, 0, 1, 1, 0, 0.5, 1, 0, 1],
-    "Konu 2 Alt 2": [1, 1, 0.5, 1, 0, 0, 0.5, 1, 0, 1, 0.5, 1, 0, 1, 1, 1, 0, 0, 1, 0.5],
-    "Konu 2 Alt 3": [1, 0, 0.5, 1, 1, 0, 1, 0.5, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0],
-    # Konu 3'ün alt konuları
-    "Konu 3 Alt 1": [1, 0.5, 1, 0, 0, 1, 1, 0.5, 1, 0, 1, 1, 0, 1, 1, 0, 0.5, 1, 0, 1],
-    "Konu 3 Alt 2": [1, 1, 0.5, 1, 0, 0, 0.5, 1, 0, 1, 0.5, 1, 0, 1, 1, 1, 0, 0, 1, 0.5],
-    "Konu 3 Alt 3": [1, 0, 0.5, 1, 1, 0, 1, 0.5, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0],
-    "Çalışma Süresi (saat)": [10, 8, 6, 5, 4, 2, 9, 3, 12, 7, 11, 4, 6, 8, 10, 1, 2, 0, 15, 1],
-    "Önceki Not": [85, 80, 75, 70, 60, 50, 90, 55, 95, 75, 88, 65, 78, 80, 92, 30, 20, 40, 10, 5],
-    "Motivasyon (1-10)": [9, 8, 7, 6, 5, 4, 9, 6, 10, 8, 9, 5, 7, 8, 9, 2, 1, 3, 1, 2],
-    "Hedef Not": [95, 90, 85, 80, 70, 60, 100, 65, 98, 85, 93, 75, 88, 90, 97, 50, 30, 40, 5, 0],
-}
+# Daha gerçekçi ve geniş bir veri seti oluşturalım
+def generate_synthetic_data(n_samples=1000):
+    data = {
+        # Ana konular (0-2 arası)
+        "Konu 1": np.random.choice([0, 1, 2], n_samples),
+        "Konu 2": np.random.choice([0, 1, 2], n_samples),
+        "Konu 3": np.random.choice([0, 1, 2], n_samples),
+        
+        # Alt konular (0-5 arası, daha yüksek ağırlık)
+        "Konu 1 Alt 1": np.random.choice([0, 2, 3, 4, 5], n_samples),
+        "Konu 1 Alt 2": np.random.choice([0, 2, 3, 4, 5], n_samples),
+        "Konu 1 Alt 3": np.random.choice([0, 2, 3, 4, 5], n_samples),
+        "Konu 2 Alt 1": np.random.choice([0, 2, 3, 4, 5], n_samples),
+        "Konu 2 Alt 2": np.random.choice([0, 2, 3, 4, 5], n_samples),
+        "Konu 2 Alt 3": np.random.choice([0, 2, 3, 4, 5], n_samples),
+        "Konu 3 Alt 1": np.random.choice([0, 2, 3, 4, 5], n_samples),
+        "Konu 3 Alt 2": np.random.choice([0, 2, 3, 4, 5], n_samples),
+        "Konu 3 Alt 3": np.random.choice([0, 2, 3, 4, 5], n_samples),
+        
+        # Çalışma süresi (1-12 saat arası, gerçekçi dağılım)
+        "Çalışma Süresi (saat)": np.random.choice(
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            n_samples,
+            p=[0.1, 0.15, 0.2, 0.15, 0.1, 0.1, 0.05, 0.05, 0.03, 0.03, 0.02, 0.02]  # Gerçekçi dağılım
+        ),
+        
+        # Önceki notlar (0-100 arası, normal dağılım)
+        "Önceki Not": np.clip(np.random.normal(70, 15, n_samples), 0, 100).astype(int),
+        
+        # Motivasyon (1-10 arası, gerçekçi dağılım)
+        "Motivasyon (1-10)": np.random.choice(
+            range(1, 11),
+            n_samples,
+            p=[0.05, 0.05, 0.1, 0.1, 0.15, 0.15, 0.15, 0.1, 0.1, 0.05]  # Gerçekçi motivasyon dağılımı
+        )
+    }
+    
+    # Hedef notu hesapla (daha gerçekçi bir formül ile)
+    df = pd.DataFrame(data)
+    
+    # Alt konu bilgisine daha fazla ağırlık veren bir hesaplama
+    alt_konu_ortalama = df[[col for col in df.columns if 'Alt' in col]].mean(axis=1) * 10  # 0-50 arası
+    ana_konu_ortalama = df[['Konu 1', 'Konu 2', 'Konu 3']].mean(axis=1) * 5  # 0-10 arası
+    motivasyon_etkisi = df['Motivasyon (1-10)'] * 0.5  # 0.5-5 arası
+    calisma_etkisi = df['Çalışma Süresi (saat)'] * 0.5  # 0.5-6 arası
+    onceki_not_etkisi = df['Önceki Not'] * 0.3  # 0-30 arası
+    
+    # Hedef notu hesapla ve 0-100 aralığında tut
+    data["Hedef Not"] = np.clip(
+        alt_konu_ortalama +  # En yüksek etki alt konulardan (0-50)
+        ana_konu_ortalama +  # Ana konulardan (0-10)
+        motivasyon_etkisi +  # Motivasyondan (0.5-5)
+        calisma_etkisi +     # Çalışma süresinden (0.5-6)
+        onceki_not_etkisi,   # Önceki nottan (0-30)
+        0, 100
+    ).astype(int)
+    
+    return data
+
+# Genişletilmiş veri setini oluştur
+data = generate_synthetic_data(1000)  # 1000 örnek
 
 # 📌 Veriyi DataFrame'e çevir
 df = pd.DataFrame(data)
@@ -41,9 +80,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 # 📌 GridSearch parametreleri
 param_grid = {
-    "n_estimators": [50, 100],
-    "learning_rate": [0.05, 0.1],
-    "max_depth": [3, 5],
+    "n_estimators": [100, 200],  # Daha fazla ağaç
+    "learning_rate": [0.01, 0.05],  # Daha düşük öğrenme oranı
+    "max_depth": [5, 7],  # Daha derin ağaçlar
 }
 
 # GridSearch ile en iyi modeli bul

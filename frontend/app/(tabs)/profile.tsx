@@ -11,17 +11,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AvatarPicker } from '../../components/AvatarPicker';
 import { scheduleAllNotifications, cancelAllNotifications } from '../../services/NotificationService';
 import { useLanguage } from '../../contexts/LanguageContext'; // Add this import
-<<<<<<< HEAD
-
-
 
 export default function Profile() {
-  const adUnitId = 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
-=======
-import {BannerAd, BannerAdSize, TestIds} from 'react-native-google-mobile-ads';
-
-export default function Profile() {
->>>>>>> f6268b3023438cac41fe56306ca39537224d197a
   const { t, language, changeLanguage } = useLanguage();
   const [userData, setUserData] = useState({
     name: '',
@@ -211,15 +202,9 @@ export default function Profile() {
           />
           <Text style={styles.userName}>{userData.name}</Text>
           {renderEducationInfo()}
-<<<<<<< HEAD
-
-        </View>
-      </LinearGradient>
-=======
         </View>
       </LinearGradient>
 
->>>>>>> f6268b3023438cac41fe56306ca39537224d197a
       <View style={styles.mainContent}>
         <View style={styles.statsGrid}>
           <StatCard icon="graduation-cap" value={stats.totalExams} label="Exams" />
@@ -296,16 +281,7 @@ export default function Profile() {
             </View>
             <FontAwesome5 name="chevron-right" size={16} color="#666" />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => router.push('/adtest')}
-          >
-            <View style={styles.settingLeft}>
-              <FontAwesome5 name="ad" size={20} color="#388E3C" />
-              <Text style={styles.settingTitle}>Test Ads</Text>
-            </View>
-            <FontAwesome5 name="chevron-right" size={16} color="#666" />
-          </TouchableOpacity>
+        
           
           {/* ...rest of existing buttons... */}
         </View>
