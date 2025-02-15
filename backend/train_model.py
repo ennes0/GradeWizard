@@ -43,14 +43,6 @@ def generate_training_data(n_samples=5000):
                 "Motivasyon (1-10)": np.random.uniform(1, 10)
             })
         
-        alt_konu_etkisi = np.mean(alt_konu_bilgisi) * 18  
-        onceki_not_etkisi = min(onceki_not * 0.4, 40)  
-        motivasyon_etkisi = sample["Motivasyon (1-10)"] * 0.3
-        calisma_etkisi = sample["Çalışma Süresi (saat)"] * 0.15
-        
-        hedef_not = alt_konu_etkisi + onceki_not_etkisi + motivasyon_etkisi + calisma_etkisi
-        sample["Hedef Not"] = np.clip(hedef_not, 0, 100)
-        
         for key, value in sample.items():
             if key not in data:
                 data[key] = []
@@ -58,7 +50,30 @@ def generate_training_data(n_samples=5000):
     
     return data
 
+# Hedef notu hesaplama fonksiyonunu güncelle
+def calculate_target_grade(row):
+    alt_konu_ortalama = np.mean([
+        row["Konu 1 Alt 1"], row["Konu 1 Alt 2"], row["Konu 1 Alt 3"],
+        row["Konu 2 Alt 1"], row["Konu 2 Alt 2"], row["Konu 2 Alt 3"],
+        row["Konu 3 Alt 1"], row["Konu 3 Alt 2"], row["Konu 3 Alt 3"]
+    ]) * 15  # Alt konular max 75 puan etkisi
+
+    onceki_not = row["Önceki Not"]
+    onceki_not_etkisi = min(onceki_not * 0.25, 25)  # Önceki not max 25 puan
+
+    # Eğer önceki not yüksek (>80) ve alt konular iyiyse (>3)
+    if onceki_not > 80 and alt_konu_ortalama/15 > 3:
+        motivasyon_etkisi = 0  # Motivasyonun etkisini sıfırla
+        calisma_etkisi = 0     # Çalışma süresinin etkisini sıfırla
+    else:
+        motivasyon_etkisi = row["Motivasyon (1-10)"] * 0.2  # Max 2 puan
+        calisma_etkisi = row["Çalışma Süresi (saat)"] * 0.1  # Max 1.2 puan
+
+    return np.clip(alt_konu_ortalama + onceki_not_etkisi + motivasyon_etkisi + calisma_etkisi, 0, 100)
+
 data = generate_training_data(5000)
+data["Hedef Not"] = pd.DataFrame(data).apply(calculate_target_grade, axis=1)
+
 df = pd.DataFrame(data)
 X = df.drop(columns=["Hedef Not"])
 y = df["Hedef Not"]

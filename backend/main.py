@@ -513,36 +513,29 @@ QUIZ_CATEGORIES = {
 }
 
 @app.get("/generate_quiz")
-async def generate_quiz():
-    """Generate a daily quiz question"""
+async def generate_quiz(language: str = 'en'):
+    """Generate a daily quiz question in specified language"""
     try:
-        # Rastgele kategori ve alt konu seç
         category = random.choice(list(QUIZ_CATEGORIES.keys()))
         topic = random.choice(QUIZ_CATEGORIES[category]["topics"])
         difficulty = random.choice(QUIZ_CATEGORIES[category]["difficulty"])
         
         prompt = f"""
-Generate a {difficulty} level question on the topic "{topic}" in the "{category}" category.
-MAKE SURE to return the response strictly in JSON format (do not include anything else):
+Generate a {difficulty} level question in {language.upper()} language on the topic "{topic}" in the "{category}" category.
+MAKE SURE to return the response strictly in JSON format and ALL TEXT (question, options, explanation) MUST BE IN {language.upper()} LANGUAGE:
 
 {{
-  "question": "[an original and engaging question]",
-  "options": ["[correct answer]", "[plausible but incorrect answer 1]", "[plausible but incorrect answer 2]", "[plausible but incorrect answer 3]"],
-  "correctAnswer": "[correct answer]",
-  "explanation": "[a brief explanation of the correct answer]",
+  "question": "[Write an engaging question in {language}]",
+  "options": ["[correct answer in {language}]", "[wrong answer 1 in {language}]", "[wrong answer 2 in {language}]", "[wrong answer 3 in {language}]"],
+  "correctAnswer": "[correct answer in {language}]",
+  "explanation": "[brief explanation in {language}]",
   "category": "{category}",
   "topic": "{topic}",
   "difficulty": "{difficulty}"
 }}
 
-Important:
-- The question should be original and engaging.
-- It should be appropriately challenging for its level.
-- The incorrect answers should be plausible alternatives.
-- The explanation should be instructive and concise.
-- Use different question formats each time (multiple choice, true/false, matching, etc.).
+Ensure the content is culturally appropriate and uses natural language expressions in {language}.
         """
-
         response = requests.post(
             "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
             json={

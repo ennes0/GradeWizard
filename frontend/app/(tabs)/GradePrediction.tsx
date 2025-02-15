@@ -297,7 +297,7 @@ const GradePrediction = () => {
   const submitPrediction = async (finalAnswers) => {
     setLoading(true);
     try {
-      const response = await axios.post("https://gradewizard.onrender.com/predict", {
+      const response = await axios.post("https://192.168.1.199:8000/predict", {
         answers: finalAnswers,
         formData: formData
       });

@@ -23,13 +23,14 @@ export const api = {
 };
 
 export const quizApi = {
-    async fetchQuizQuestion() {
+    async fetchQuizQuestion(language: string = 'en') {
         try {
-            const response = await axiosInstance.get("/generate_quiz");
-            console.log("Quiz API Response:", response.data);
+            const response = await axios.get(`https://gradewizard-1.onrender.com/generate_quiz`, {
+                params: { language }
+            });
             return response.data;
         } catch (error) {
-            console.error("Error fetching quiz:", error);
+            console.error('Error fetching quiz:', error);
             throw error;
         }
     }

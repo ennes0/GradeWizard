@@ -4,12 +4,12 @@
     "slug": "gradwizard",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/loggo.png",
+    "icon": "./assets/images/logo.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/loggo.png",
+      "image": "./assets/images/logo0.png",
       "resizeMode": "contain",
       "backgroundColor": "#0e1b0d"
     },
@@ -31,7 +31,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/loggo.png",
+        "foregroundImage": "./assets/images/logo0.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.enesoy.gradwizard",
@@ -42,7 +42,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/loggo.png"
+      "favicon": "./assets/images/logo.png"
     },
     "plugins": [
       "expo-router",

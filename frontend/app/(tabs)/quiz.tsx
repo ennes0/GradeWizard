@@ -16,6 +16,21 @@ interface QuizQuestion {
   correctAnswer: string;
 }
 
+// Dil seçenekleri için interface
+interface LanguageOption {
+  code: string;
+  name: string;
+  flag: string;
+}
+
+const LANGUAGE_OPTIONS: LanguageOption[] = [
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+];
+
 export default function Quiz() {
   const [quizzes, setQuizzes] = useState<QuizQuestion[]>([]);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
@@ -30,6 +45,8 @@ export default function Quiz() {
   const [isCorrect, setIsCorrect] = useState(false);
   const feedbackAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
+  const [showLanguageSelect, setShowLanguageSelect] = useState(true);
 
   useEffect(() => {
     checkDailyQuiz();
@@ -71,7 +88,7 @@ export default function Quiz() {
 
   const fetchQuizQuestion = async () => {
     try {
-      const response = await axios.get('https://gradewizard-1.onrender.comgenerate_quiz');
+      const response = await axios.get('https://gradewizard-1.onrender.com/generate_quiz');
       console.log('Quiz API Response:', response.data);
       return response.data;
     } catch (error) {
@@ -87,7 +104,8 @@ export default function Quiz() {
 
       for (let i = 0; i < 5; i++) {
         try {
-          const quizData = await quizApi.fetchQuizQuestion();
+          // Dil parametresini API çağrısına ekle
+          const quizData = await quizApi.fetchQuizQuestion(selectedLanguage);
           newQuizzes.push({
             question: quizData.question,
             options: quizData.options,
@@ -307,25 +325,48 @@ export default function Quiz() {
       ]}>
         <LinearGradient
           colors={isCorrect ? ['#4CAF50', '#388E3C'] : ['#F44336', '#D32F2F']}
-          style={styles.feedbackContent}
+          style={styles.feedbackCard}
         >
-          <View style={styles.feedbackIconContainer}>
+          {/* Icon ve Ana Metin */}
+          <View style={styles.feedbackHeader}>
             <FontAwesome
               name={isCorrect ? "check-circle" : "times-circle"}
-              size={40}
+              size={50}
               color="#FFF"
             />
-          </View>
-          <View style={styles.feedbackTextContainer}>
-            <Text style={styles.feedbackText}>
-              {isCorrect ? 'Correct!' : 'Wrong!'}
+            <Text style={styles.feedbackTitle}>
+              {isCorrect ? 'Correct!' : 'Incorrect!'}
             </Text>
-            {!isCorrect && currentQuiz && (
-              <Text style={styles.correctAnswerText}>
-                Correct answer: {currentQuiz.correctAnswer}
-              </Text>
-            )}
           </View>
+
+          {/* Açıklama Bölümü */}
+          {!isCorrect && (
+            <View style={styles.explanationContainer}>
+              <Text style={styles.explanationLabel}>Correct Answer:</Text>
+              <Text style={styles.correctAnswerText}>
+                {currentQuiz.correctAnswer}
+              </Text>
+            </View>
+          )}
+
+          {/* Devam Butonu */}
+          <TouchableOpacity 
+            style={styles.nextButton}
+            onPress={() => {
+              setFeedbackVisible(false);
+              if (currentQuizIndex < quizzes.length - 1) {
+                setCurrentQuizIndex(prev => prev + 1);
+                animateQuestion();
+              } else {
+                handleQuizComplete();
+              }
+            }}
+          >
+            <Text style={styles.nextButtonText}>
+              {currentQuizIndex < quizzes.length - 1 ? 'Next Question' : 'Complete Quiz'}
+            </Text>
+            <FontAwesome name="arrow-right" size={20} color="#FFF" />
+          </TouchableOpacity>
         </LinearGradient>
       </Animated.View>
     );
@@ -464,6 +505,59 @@ export default function Quiz() {
     </View>
   );
 
+  // Dil seçim ekranı
+  const renderLanguageSelect = () => (
+    <View style={styles.languageSelectContainer}>
+      <LinearGradient
+        colors={['#4CAF50', '#388E3C']}
+        style={styles.languageCard}
+      >
+        <View style={styles.languageHeader}>
+          <FontAwesome name="language" size={40} color="#FFF" />
+          <Text style={styles.languageTitle}>Select Quiz Language</Text>
+          <Text style={styles.languageSubtitle}>Choose your preferred language</Text>
+        </View>
+
+        <View style={styles.languageGrid}>
+          {LANGUAGE_OPTIONS.map((lang) => (
+            <TouchableOpacity
+              key={lang.code}
+              style={[
+                styles.languageOption,
+                selectedLanguage === lang.code && styles.languageOptionSelected
+              ]}
+              onPress={() => setSelectedLanguage(lang.code)}
+            >
+              <Text style={styles.languageFlag}>{lang.flag}</Text>
+              <Text style={[
+                styles.languageName,
+                selectedLanguage === lang.code && styles.languageNameSelected
+              ]}>
+                {lang.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={() => {
+            setShowLanguageSelect(false);
+            startQuiz();
+          }}
+        >
+          <LinearGradient
+            colors={['#66BB6A', '#43A047']}
+            style={styles.buttonGradient}
+          >
+            <Text style={styles.continueButtonText}>Continue</Text>
+            <FontAwesome name="arrow-right" size={20} color="#FFF" />
+          </LinearGradient>
+        </TouchableOpacity>
+      </LinearGradient>
+    </View>
+  );
+
   // Ana render fonksiyonunda koşulları debug edelim
   return (
     <LinearGradient colors={['#E8F5E9', '#C8E6C9']} style={styles.container}>
@@ -475,6 +569,8 @@ export default function Quiz() {
           </View>
         ) : !canPlay ? (
           renderCompletionScreen()
+        ) : showLanguageSelect ? (
+          renderLanguageSelect()
         ) : quizzes.length === 0 ? (
           renderWelcomeScreen()
         ) : (
@@ -732,39 +828,63 @@ const styles = StyleSheet.create({
   },
   feedbackOverlay: {
     position: 'absolute',
-    top: '40%',
-    left: '10%',
-    right: '10%',
+    top: '50%',
+    left: '5%',
+    right: '5%',
+    transform: [{ translateY: -150 }],
     zIndex: 1000,
   },
-  feedbackContent: {
-    padding: 20,
-    borderRadius: 15,
+  feedbackCard: {
+    padding: 24,
+    borderRadius: 20,
     alignItems: 'center',
-    elevation: 5,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  feedbackText: {
-    color: '#FFF',
-    fontSize: 24,
+  feedbackHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  feedbackTitle: {
+    fontSize: 28,
     fontWeight: 'bold',
-    marginTop: 10,
+    color: '#FFF',
+    marginTop: 12,
+  },
+  explanationContainer: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: 16,
+    borderRadius: 12,
+    width: '100%',
+    marginBottom: 20,
+  },
+  explanationLabel: {
+    color: '#FFF',
+    opacity: 0.9,
+    fontSize: 14,
+    marginBottom: 4,
   },
   correctAnswerText: {
     color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  nextButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+  },
+  nextButtonText: {
+    color: '#FFF',
     fontSize: 16,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  feedbackIconContainer: {
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  feedbackTextContainer: {
-    alignItems: 'center',
+    fontWeight: 'bold',
   },
   welcomeCard: {
     width: '100%',
@@ -927,5 +1047,79 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFF',
     opacity: 0.9,
-  }
+  },
+  languageSelectContainer: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  languageCard: {
+    borderRadius: 20,
+    padding: 24,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  languageHeader: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  languageTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginTop: 16,
+  },
+  languageSubtitle: {
+    fontSize: 16,
+    color: '#FFF',
+    opacity: 0.9,
+    marginTop: 8,
+  },
+  languageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 30,
+  },
+  languageOption: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    width: '45%',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  languageOptionSelected: {
+    borderColor: '#FFF',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  languageFlag: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  languageName: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  languageNameSelected: {
+    fontWeight: 'bold',
+  },
+  continueButton: {
+    width: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 3,
+  },
+  continueButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
 });
