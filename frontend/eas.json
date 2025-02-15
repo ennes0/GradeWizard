@@ -1,8 +1,8 @@
 {
   "cli": {
-    "version": ">= 15.0.4",
+    "version": ">= 5.9.1",
     "appVersionSource": "remote",
-    "requireCommit": false
+    "requireCommit": true
   },
   "build": {
     "development": {
@@ -13,7 +13,7 @@
       },
       "ios": {
         "buildConfiguration": "Debug",
-        "resourceClass": "m1-medium"
+        "resourceClass": "m-medium"
       },
       "env": {
         "EXPO_USE_YARN": "false"
@@ -26,14 +26,14 @@
         "buildType": "apk"
       },
       "ios": {
-        "resourceClass": "m1-medium",
+        "resourceClass": "m-medium",
         "buildConfiguration": "Release"
       }
     },
     "production": {
       "autoIncrement": true,
       "ios": {
-        "resourceClass": "m1-medium",
+        "resourceClass": "m-medium",
         "buildConfiguration": "Release",
         "image": "latest"
       }

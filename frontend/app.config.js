@@ -3,6 +3,8 @@ module.exports = {
   slug: 'gradwizard',
   version: '1.0.0',
   orientation: 'portrait',
+  icon: './assets/images/logo.png',
+  userInterfaceStyle: 'automatic',
   android: {
     package: "com.enesoy.gradwizard",
     adaptiveIcon: {
@@ -14,6 +16,9 @@ module.exports = {
     }
   },
   ios: {
+    bundleIdentifier: "com.enesoy.gradwizard",
+    buildNumber: "1.0.0",
+    supportsTablet: true,
     config: {
       googleMobileAdsAppId: "ca-app-pub-3940256099942544~1458002511"
     }
