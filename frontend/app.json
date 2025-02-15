@@ -54,8 +54,7 @@
             "useFrameworks": "static"
           }
         }
-      ],
-      "react-native-google-mobile-ads"
+      ]
     ],
     "extra": {
       "expo-ads-admob": {
