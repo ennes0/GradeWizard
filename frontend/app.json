@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "Grad Wizard",
+    "name": "Grade Wizard",
     "slug": "gwizard",
     "version": "1.0.0",
     "orientation": "portrait",
     "owner": "ennoo",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/loggo2.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/logo0.png",
+      "image": "./assets/images/loggo2.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0e1b0d"
+      "backgroundColor": "#23720B"
     },
     "ios": {
       "supportsTablet": true,
@@ -29,15 +29,15 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo0.png",
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/images/loggo2.png",
+        "backgroundColor": "#23720B"
       },
       "package": "com.enesoy.gradwizard"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/logo.png"
+      "favicon": "./assets/images/loggo2.png"
     },
     "plugins": [
       "expo-router",
@@ -62,7 +62,7 @@
       "typedRoutes": true
     },
     "notification": {
-      "icon": "./assets/images/logo.png",
+      "icon": "./assets/images/loggo.png",
       "color": "#51B402",
       "iosDisplayInForeground": true,
       "androidMode": "default",

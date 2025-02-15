@@ -6,6 +6,8 @@ import {
 import { FontAwesome5 } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 interface Exam {
   id: string;
@@ -44,6 +46,8 @@ export default function ExamsScreen() {
 
   useEffect(() => {
     loadExams();
+    const interval = setInterval(checkAndRemoveExpiredExams, 86400000); // 24 saat
+    return () => clearInterval(interval);
   }, []);
 
   const loadExams = async () => {
@@ -54,6 +58,24 @@ export default function ExamsScreen() {
       }
     } catch (error) {
       console.error('Error loading exams:', error);
+    }
+  };
+
+  const checkAndRemoveExpiredExams = async () => {
+    try {
+      const currentExams = [...exams];
+      const now = new Date().getTime();
+      const updatedExams = currentExams.filter(exam => {
+        const examDate = new Date(exam.examDate).getTime();
+        return examDate > now;
+      });
+
+      if (updatedExams.length !== currentExams.length) {
+        await AsyncStorage.setItem('exams', JSON.stringify(updatedExams));
+        setExams(updatedExams);
+      }
+    } catch (error) {
+      console.error('Error removing expired exams:', error);
     }
   };
 
@@ -146,61 +168,107 @@ export default function ExamsScreen() {
   };
 
   const renderExamCard = ({ item }: { item: Exam }) => {
-    const daysUntilExam = Math.ceil(
-      (new Date(item.examDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const examDate = new Date(item.examDate);
+    const now = new Date();
+    const daysUntilExam = Math.ceil((examDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const hoursUntilExam = Math.ceil((examDate.getTime() - now.getTime()) / (1000 * 60 * 60));
+
+    const getTimeDisplay = () => {
+      if (daysUntilExam <= 0) {
+        if (hoursUntilExam <= 0) return 'Today';
+        return `${hoursUntilExam}h`;
+      }
+      return `${daysUntilExam}d`;
+    };
+
+    const getUrgencyColor = () => {
+      if (daysUntilExam <= 1) return ['#FF416C', '#FF4B2B'];
+      if (daysUntilExam <= 3) return ['#F6983C', '#E8781E'];
+      if (daysUntilExam <= 7) return ['#3CB0F6', '#1E88E8'];
+      return ['#4CAF50', '#388E3C'];
+    };
 
     return (
-      <View style={styles.examCard}>
-        <View style={[styles.examBadge, { backgroundColor: getImportanceColor(item.importance) }]}>
-          <Text style={styles.examBadgeText}>
-            {daysUntilExam} DAYS
-          </Text>
-        </View>
-        
-        <View style={styles.examMainContent}>
-          <View style={styles.examHeader}>
-            <Text style={styles.examSubject}>{item.subject}</Text>
-            <Text style={styles.examDate}>
-              {new Date(item.examDate).toLocaleDateString('en-US')}
-            </Text>
+      <Animated.View 
+        style={[styles.examCardContainer]}
+        entering={FadeInDown.duration(400)}
+      >
+        <LinearGradient
+          colors={getUrgencyColor()}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.examCard}
+        >
+          <View style={styles.cardHeader}>
+            <View style={styles.subjectContainer}>
+              <Text style={styles.subjectText}>{item.subject}</Text>
+              <Text style={styles.dateText}>
+                {examDate.toLocaleDateString('en-US', { 
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </Text>
+            </View>
+            <View style={styles.timeContainer}>
+              <Text style={styles.timeText}>{getTimeDisplay()}</Text>
+              <Text style={styles.timeLabel}>remaining</Text>
+            </View>
           </View>
 
-          <View style={styles.topicsContainer}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.topicsScroll}
+          >
             {item.topics.map((topic, index) => (
               <View key={index} style={styles.topicChip}>
                 <Text style={styles.topicText}>{topic}</Text>
               </View>
             ))}
-          </View>
+          </ScrollView>
 
-          <View style={styles.studyPlanSection}>
-            {item.studyPlan.created ? (
-              <TouchableOpacity 
-                style={styles.viewPlanButton}
-                onPress={() => {
+          <View style={styles.cardFooter}>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                item.studyPlan.created ? styles.viewPlanButton : styles.createPlanButton
+              ]}
+              onPress={() => {
+                if (item.studyPlan.created) {
                   setSelectedStudyPlan(item.studyPlan.plan);
                   setShowStudyPlanDetailsModal(true);
-                }}
-              >
-                <FontAwesome5 name="book-reader" size={16} color="#FFF" />
-                <Text style={styles.viewPlanText}>Study Plan</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity 
-                style={styles.createPlanButton}
-                onPress={() => {
+                } else {
                   setSelectedExam(item);
                   setShowStudyPlanModal(true);
-                }}
-              >
-                <FontAwesome5 name="plus" size={16} color="#FFF" />
-                <Text style={styles.createPlanText}>Create Plan</Text>
-              </TouchableOpacity>
-            )}
+                }
+              }}
+            >
+              <FontAwesome5 
+                name={item.studyPlan.created ? "book-reader" : "plus"} 
+                size={16} 
+                color="#FFF" 
+              />
+              <Text style={styles.actionButtonText}>
+                {item.studyPlan.created ? "View Plan" : "Create Plan"}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.importanceIndicator}>
+              <FontAwesome5 
+                name="flag" 
+                size={14} 
+                color="#FFF" 
+                style={styles.importanceIcon}
+              />
+              <Text style={styles.importanceText}>
+                {item.importance.charAt(0).toUpperCase() + item.importance.slice(1)} Priority
+              </Text>
+            </View>
           </View>
-        </View>
-      </View>
+        </LinearGradient>
+      </Animated.View>
     );
   };
 
@@ -290,6 +358,113 @@ export default function ExamsScreen() {
     }
   };
 
+  const renderAddExamModal = () => (
+    <Modal
+      visible={showAddModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => {
+        setShowAddModal(false);
+        resetForm();
+      }}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.modalTitle}>Add New Exam</Text>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Subject</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter subject name"
+                placeholderTextColor="#94A3B8"
+                value={newExam.subject}
+                onChangeText={text => setNewExam({ ...newExam, subject: text })}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Exam Date</Text>
+              {Platform.OS === 'ios' ? (
+                <DateTimePicker
+                  value={newExam.examDate}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleDateChange}
+                  minimumDate={new Date()}
+                  style={[styles.input, { height: 120 }]}
+                />
+              ) : (
+                <TouchableOpacity
+                  style={styles.datePickerButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={[styles.dateText, !newExam.examDate && styles.datePlaceholder]}>
+                    {newExam.examDate ? newExam.examDate.toLocaleDateString() : 'Select date'}
+                  </Text>
+                  <FontAwesome5 name="calendar-alt" size={20} color="#64748B" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Topics</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Enter topics separated by commas"
+                placeholderTextColor="#94A3B8"
+                value={newExam.topics}
+                onChangeText={text => setNewExam({ ...newExam, topics: text })}
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+
+            <View style={styles.importanceContainer}>
+              <Text style={styles.importanceTitle}>Importance Level</Text>
+              <View style={styles.importanceButtons}>
+                {['low', 'medium', 'high'].map((imp) => (
+                  <TouchableOpacity
+                    key={imp}
+                    style={[
+                      styles.importanceButton,
+                      { backgroundColor: getImportanceColor(imp) },
+                      newExam.importance === imp && { transform: [{ scale: 1.05 }] }
+                    ]}
+                    onPress={() => setNewExam({...newExam, importance: imp as any})}
+                  >
+                    <Text style={styles.importanceText}>
+                      {imp.charAt(0).toUpperCase() + imp.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowAddModal(false);
+                  resetForm();
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={saveExam}
+              >
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -318,78 +493,7 @@ export default function ExamsScreen() {
         </View>
       )}
 
-      <Modal
-        visible={showAddModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => {
-          setShowAddModal(false);
-          resetForm();
-        }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New Exam</Text>
-            
-            <Text style={styles.inputLabel}>Subject Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ex: Mathematics"
-              value={newExam.subject}
-              onChangeText={text => setNewExam({ ...newExam, subject: text })}
-            />
-
-            {renderDatePicker()}
-
-            <Text style={styles.inputLabel}>Topics</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Enter topics separated by commas"
-              value={newExam.topics}
-              onChangeText={text => setNewExam({ ...newExam, topics: text })}
-              multiline
-            />
-
-            <View style={styles.importanceContainer}>
-              <Text style={styles.importanceTitle}>Importance Level:</Text>
-              <View style={styles.importanceButtons}>
-                {['low', 'medium', 'high'].map((imp) => (
-                  <TouchableOpacity
-                    key={imp}
-                    style={[
-                      styles.importanceButton,
-                      { 
-                        backgroundColor: getImportanceColor(imp),
-                        opacity: newExam.importance === imp ? 1 : 0.5
-                      }
-                    ]}
-                    onPress={() => setNewExam({...newExam, importance: imp as any})}
-                  >
-                    <Text style={styles.importanceText}>
-                      {imp === 'low' ? 'Low' : imp === 'medium' ? 'Medium' : 'High'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowAddModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={saveExam}
-              >
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {renderAddExamModal()}
 
       <Modal
         visible={showStudyPlanModal}
@@ -496,96 +600,110 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 80,
   },
-  examCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+  examCardContainer: {
     marginBottom: 16,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    elevation: 3,
+    borderRadius: 20,
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
-  examBadge: {
-    width: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 8,
-  },
-  examBadgeText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  examMainContent: {
-    flex: 1,
+  examCard: {
+    borderRadius: 20,
     padding: 16,
+    overflow: 'hidden',
   },
-  examHeader: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  examSubject: {
+  subjectContainer: {
+    flex: 1,
+    marginRight: 16,
+  },
+  subjectText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  dateText: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+  },
+  timeContainer: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: 8,
+    borderRadius: 12,
+    minWidth: 80,
+  },
+  timeText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: '#FFF',
   },
-  examDate: {
-    fontSize: 14,
-    color: '#7F8C8D',
+  timeLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
   },
-  topicsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  topicsScroll: {
     marginBottom: 12,
   },
   topicChip: {
-    backgroundColor: '#F0F2F5',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
+    marginRight: 8,
   },
   topicText: {
-    fontSize: 12,
-    color: '#34495E',
+    color: '#FFF',
+    fontSize: 14,
   },
-  studyPlanSection: {
+  cardFooter: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 8,
   },
   viewPlanButton: {
-    backgroundColor: '#2ECC71',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.3)',
   },
   createPlanButton: {
-    backgroundColor: '#3498DB',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  actionButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  importanceIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 8,
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
-  viewPlanText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
+  importanceIcon: {
+    marginRight: 4,
   },
-  createPlanText: {
+  importanceText: {
     color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
   },
   addButton: {
     backgroundColor: '#3498DB',
@@ -602,78 +720,104 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 20,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: 24,
+    paddingTop: 32,
+    maxHeight: '90%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 10,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#388E3C',
+    color: '#2C3E50',
+    marginBottom: 24,
+    textAlign: 'left',
+  },
+  inputContainer: {
     marginBottom: 20,
-    textAlign: 'center',
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: '#34495E',
+    marginBottom: 8,
+    fontWeight: '600',
   },
   input: {
-    backgroundColor: '#F5F5F5',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#E2E8F0',
+    fontSize: 16,
+    color: '#2C3E50',
   },
   textArea: {
-    height: 100,
+    height: 120,
     textAlignVertical: 'top',
+    paddingTop: 14,
   },
   importanceContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   importanceTitle: {
     fontSize: 16,
-    color: '#333',
-    marginBottom: 8,
+    color: '#34495E',
+    marginBottom: 12,
+    fontWeight: '600',
   },
   importanceButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 12,
   },
   importanceButton: {
     flex: 1,
-    padding: 10,
-    borderRadius: 8,
-    marginHorizontal: 4,
+    padding: 12,
+    borderRadius: 12,
     alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   importanceText: {
     color: '#FFF',
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '600',
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
+    gap: 12,
+    marginTop: 24,
   },
   modalButton: {
     flex: 1,
-    padding: 15,
-    borderRadius: 10,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   saveButton: {
     backgroundColor: '#388E3C',
   },
   cancelButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F1F5F9',
   },
   saveButtonText: {
     color: '#FFF',
@@ -681,9 +825,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   cancelButtonText: {
-    color: '#666',
+    color: '#64748B',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  datePickerButton: {
+    backgroundColor: '#F8FAFC',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dateText: {
+    fontSize: 16,
+    color: '#2C3E50',
+  },
+  datePlaceholder: {
+    color: '#94A3B8',
   },
   emptyContainer: {
     flex: 1,
@@ -698,12 +859,6 @@ const styles = StyleSheet.create({
   emptySubText: {
     fontSize: 14,
     color: '#999',
-    marginTop: 8,
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
     marginTop: 8,
   },
   inputError: {
@@ -722,10 +877,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E0E0E0',
-  },
-  dateText: {
-    color: '#333',
-    fontSize: 16,
   },
   viewPlanButton: {
     backgroundColor: '#E8F5E9',

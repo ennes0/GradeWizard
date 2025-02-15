@@ -31,6 +31,7 @@ export default function Layout() {
       } else if (!userProfile) {
         router.replace("/user-setup");
       } else {
+        // Değiştirilen kısım: Doğrudan Home sayfasına yönlendir
         router.replace("/(tabs)/Home");
       }
     } catch (error) {

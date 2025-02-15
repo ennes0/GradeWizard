@@ -17,12 +17,13 @@ const slides = [
       'Personalized recommendations',
       'Progress tracking'
     ],
-    icon: 'chart-line',
-    gradientColors: ['#4CAF50', '#81C784']
+    icon: 'brain',
+    gradientColors: ['#4CAF50', '#81C784'],
+    illustration: '🎯'
   },
   {
     id: '2',
-    title: 'Study Plan',
+    title: 'Smart Study Plan',
     description: 'Create a custom study plan for each exam and progress step by step towards your goals.',
     subpoints: [
       'Weekly study program',
@@ -30,31 +31,34 @@ const slides = [
       'Smart time management'
     ],
     icon: 'calendar-check',
-    gradientColors: ['#2196F3', '#64B5F6']
+    gradientColors: ['#2196F3', '#64B5F6'],
+    illustration: '📚'
   },
   {
     id: '3',
-    title: 'Study Tracking',
-    description: 'Track your daily study routine and keep your motivation high.',
+    title: 'Daily Progress',
+    description: 'Track your daily study routine and keep your motivation high with personalized insights.',
     subpoints: [
-      'Daily study duration',
+      'Daily study tracking',
       'Success statistics',
-      'Motivation notifications'
+      'Motivation boosters'
     ],
-    icon: 'tasks',
-    gradientColors: ['#9C27B0', '#BA68C8']
+    icon: 'chart-line',
+    gradientColors: ['#9C27B0', '#BA68C8'],
+    illustration: '📈'
   },
   {
     id: '4',
-    title: 'Success Analysis',
-    description: 'Analyze your performance and discover areas for improvement.',
+    title: 'Get Started!',
+    description: 'Ready to improve your academic performance? Let\'s begin your success journey!',
     subpoints: [
-      'Detailed performance graphs',
-      'Development suggestions',
-      'Success comparisons'
+      'Personalized experience',
+      'Daily motivation',
+      'Track your growth'
     ],
     icon: 'graduation-cap',
-    gradientColors: ['#FF9800', '#FFB74D']
+    gradientColors: ['#FF9800', '#FFB74D'],
+    illustration: '🎓'
   }
 ];
 
@@ -64,19 +68,13 @@ export default function Onboarding() {
   const scrollX = useRef(new Animated.Value(0)).current;
   const animatedValue = useRef(new Animated.Value(0)).current;
 
-  const handleOnboardingComplete = async () => {
+  const finishOnboarding = async () => {
     try {
-      Animated.spring(animatedValue, {
-        toValue: 1,
-        useNativeDriver: true,
-        friction: 8,
-        tension: 40
-      }).start(async () => {
-        await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-        router.replace('/user-setup');
-      });
+      await AsyncStorage.setItem("hasSeenOnboarding", "true");
+      // User setup ekranına yönlendir
+      router.replace("/user-setup");
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      console.error("Error saving onboarding status:", error);
     }
   };
 
@@ -97,42 +95,77 @@ export default function Onboarding() {
       outputRange: [0.5, 1, 0.5]
     });
 
+    const translateY = scrollX.interpolate({
+      inputRange,
+      outputRange: [50, 0, 50]
+    });
+
     return (
-      <Animated.View style={[styles.slide, { transform: [{ scale }], opacity }]}>
+      <Animated.View style={[styles.slide, { 
+        transform: [{ scale }, { translateY }],
+        opacity 
+      }]}>
         <LinearGradient
           colors={item.gradientColors}
-          style={styles.iconContainer}
+          style={styles.contentContainer}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <FontAwesome5 name={item.icon} size={60} color="#FFF" />
-        </LinearGradient>
-        
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.description}>{item.description}</Text>
-        
-        <View style={styles.subpointsContainer}>
-          {item.subpoints.map((point, idx) => (
-            <Animated.View 
-              key={idx} 
-              style={[styles.subpointRow, {
-                transform: [{
-                  translateX: scrollX.interpolate({
-                    inputRange: [(index - 1) * width, index * width, (index + 1) * width],
-                    outputRange: [50, 0, -50]
+          {/* Illustration & Icon Container */}
+          <Animated.View style={[styles.illustrationContainer, {
+            transform: [{
+              rotate: scrollX.interpolate({
+                inputRange,
+                outputRange: ['-15deg', '0deg', '15deg']
+              })
+            }]
+          }]}>
+            <Text style={styles.illustration}>{item.illustration}</Text>
+            <View style={styles.iconOverlay}>
+              <FontAwesome5 name={item.icon} size={32} color="#FFF" />
+            </View>
+          </Animated.View>
+          
+          {/* Content */}
+          <Animated.Text style={[styles.title, {
+            transform: [{
+              translateX: scrollX.interpolate({
+                inputRange,
+                outputRange: [-50, 0, 50]
+              })
+            }]
+          }]}>
+            {item.title}
+          </Animated.Text>
+          
+          <Text style={styles.description}>{item.description}</Text>
+          
+          {/* Features List */}
+          <View style={styles.featuresList}>
+            {item.subpoints.map((point, idx) => (
+              <Animated.View 
+                key={idx}
+                style={[styles.featureItem, {
+                  transform: [{
+                    translateX: scrollX.interpolate({
+                      inputRange,
+                      outputRange: [100, 0, -100]
+                    })
+                  }],
+                  opacity: scrollX.interpolate({
+                    inputRange,
+                    outputRange: [0, 1, 0]
                   })
-                }],
-                opacity: scrollX.interpolate({
-                  inputRange: [(index - 1) * width, index * width, (index + 1) * width],
-                  outputRange: [0, 1, 0]
-                })
-              }]}
-            >
-              <FontAwesome5 name="check-circle" size={16} color={item.gradientColors[0]} />
-              <Text style={styles.subpointText}>{point}</Text>
-            </Animated.View>
-          ))}
-        </View>
+                }]}
+              >
+                <View style={styles.featureIcon}>
+                  <FontAwesome5 name="check" size={12} color="#FFF" />
+                </View>
+                <Text style={styles.featureText}>{point}</Text>
+              </Animated.View>
+            ))}
+          </View>
+        </LinearGradient>
       </Animated.View>
     );
   };
@@ -196,28 +229,47 @@ export default function Onboarding() {
         }}
       />
       <Pagination />
-      <View style={styles.buttonContainer}>
-        {currentIndex === slides.length - 1 ? (
-          <TouchableOpacity style={styles.button} onPress={handleOnboardingComplete}>
-            <Text style={styles.buttonText}>Start</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity 
-            style={styles.button}
-            onPress={() => {
+      
+      {/* Bottom Navigation */}
+      <View style={styles.navigation}>
+        <TouchableOpacity 
+          style={[styles.navButton, styles.skipButton]}
+          onPress={() => finishOnboarding()}
+        >
+          <Text style={styles.skipButtonText}>Skip</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.navButton, styles.nextButton]}
+          onPress={() => {
+            if (currentIndex === slides.length - 1) {
+              finishOnboarding();
+            } else {
               slideRef.current?.scrollToIndex({
                 index: currentIndex + 1,
                 animated: true
               });
-            }}
+            }
+          }}
+        >
+          <LinearGradient
+            colors={slides[currentIndex].gradientColors}
+            style={styles.nextButtonGradient}
           >
-            <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
-        )}
+            <Text style={styles.nextButtonText}>
+              {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
+            </Text>
+            <FontAwesome5 
+              name={currentIndex === slides.length - 1 ? 'rocket' : 'arrow-right'} 
+              size={16} 
+              color="#FFF" 
+            />
+          </LinearGradient>
+        </TouchableOpacity>
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -250,16 +302,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 16,
+    color: '#FFF',
+    marginBottom: 12,
     textAlign: 'center',
   },
   description: {
     fontSize: 16,
-    color: '#666',
+    color: '#FFF',
+    opacity: 0.9,
     textAlign: 'center',
-    paddingHorizontal: 32,
     lineHeight: 24,
-    marginBottom: 30,
   },
   subpointsContainer: {
     alignItems: 'flex-start',
@@ -362,5 +414,95 @@ const styles = StyleSheet.create({
   languageDesc: {
     fontSize: 14,
     color: '#666',
+  },
+  contentContainer: {
+    width: width * 0.9,
+    padding: 24,
+    borderRadius: 24,
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  illustrationContainer: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  illustration: {
+    fontSize: 80,
+    marginBottom: -20,
+  },
+  iconOverlay: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: 16,
+    borderRadius: 20,
+    marginTop: 16,
+  },
+  featuresList: {
+    width: '100%',
+    marginTop: 24,
+    gap: 12,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    padding: 12,
+    borderRadius: 12,
+    gap: 12,
+  },
+  featureIcon: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureText: {
+    color: '#FFF',
+    fontSize: 16,
+    flex: 1,
+  },
+  navigation: {
+    position: 'absolute',
+    bottom: 40,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  navButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  skipButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  skipButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  nextButton: {
+    minWidth: 120,
+  },
+  nextButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+  nextButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

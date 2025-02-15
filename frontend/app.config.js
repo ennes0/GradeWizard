@@ -1,16 +1,21 @@
 module.exports = {
-  name: 'Grad Wizard',
+  name: 'Grade Wizard',
   slug: 'gwizard',
   version: '1.0.0',
   orientation: 'portrait',
   owner: "ennoo",
-  icon: './assets/images/logo.png',
+  icon: './assets/images/loggo2.png',
   userInterfaceStyle: 'automatic',
+  splash: {
+    image: './assets/images/loggo2.png',
+    resizeMode: 'contain',
+      backgroundColor: "#2e960f"  // Renk güncellendi
+  },
   android: {
     package: "com.enesoy.gradwizard",
     adaptiveIcon: {
-      foregroundImage: "./assets/images/logo0.png",
-      backgroundColor: "#FFFFFF"
+      foregroundImage: "./assets/images/loggo.png",
+      backgroundColor: "#2e960f"  // Renk güncellendi
     }
   },
   ios: {
