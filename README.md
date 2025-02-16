@@ -67,16 +67,6 @@ cd frontend
 npm start
 ```
 
-## 🤝 Contributing
-
-If you'd like to contribute to this project, follow these steps:
-
-1. Fork this repository
-2. Create a new branch: `git checkout -b new-feature`
-3. Make your changes and commit them: `git commit -m 'Added new feature'`
-4. Push to the branch: `git push origin new-feature`
-5. Open a Pull Request (PR)
-
 ## 📌 License
 
 This project is licensed under the MIT License. For more details, check the [LICENSE](LICENSE) file.
