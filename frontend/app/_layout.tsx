@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import AnimatedTabBar from "../components/AnimatedTabBar";
 import * as Notifications from "expo-notifications";
 import { registerForPushNotificationsAsync, scheduleMotivationalNotification } from "../services/NotificationService";
+import AdService from "@/services/AdService";
 
 export default function Layout() {
   const router = useRouter();
@@ -17,6 +18,11 @@ export default function Layout() {
 
   useEffect(() => {
     checkOnboarding();
+  }, []);
+
+  useEffect(() => {
+    // Initialize AdMob
+    AdService.initialize();
   }, []);
 
   const checkOnboarding = async () => {

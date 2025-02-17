@@ -6,6 +6,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { APP_TEXT } from '../../constants/text';
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import AdService from '../../services/AdService';
+
 const { width } = Dimensions.get('window');
 
 const Home = () => {
@@ -21,20 +24,8 @@ const Home = () => {
   const [featuresKey, setFeaturesKey] = useState(0);
   const [animatedValues, setAnimatedValues] = useState<Animated.Value[]>([]);
   const [upcomingExams, setUpcomingExams] = useState([]);
-  const [weeklyStats, setWeeklyStats] = useState({
-    studyHours: Array(7).fill(0),
-    bestDay: { day: '', hours: 0 },
-    average: 0,
-    total: 0,
-    goalProgress: 0
-  });
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const scrollX = useRef(new Animated.Value(0)).current;
-
-  // İngilizce gün adları için yardımcı fonksiyon
-  const getEnglishDayName = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
-  };
 
   useEffect(() => {
     const updateStreak = async () => {
@@ -47,23 +38,10 @@ const Home = () => {
     loadRecentGrades();
     calculateStats();
     loadUpcomingExams();
-    loadWeeklyStats();
 
     // Add interval to check date changes
     const interval = setInterval(updateStreak, 60000); // Check every minute
-
-    // Add interval to check for week change
-    const weeklyInterval = setInterval(() => {
-      const now = new Date();
-      if (now.getDay() === 1 && now.getHours() === 0) { // Monday at midnight
-        loadWeeklyStats();
-      }
-    }, 3600000); // Check every hour
-
-    return () => {
-      clearInterval(interval);
-      clearInterval(weeklyInterval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -222,72 +200,13 @@ const Home = () => {
     }
   };
 
-  const getWeekDates = () => {
-    const today = new Date();
-    const firstDay = new Date(today.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)));
-    const lastDay = new Date(today.setDate(today.getDate() - today.getDay() + 7));
-    return { firstDay, lastDay };
-  };
-
-  const loadWeeklyStats = async () => {
-    try {
-      const streak = await AsyncStorage.getItem('study_streak');
-      if (!streak) return;
-
-      const studyData = JSON.parse(streak);
-      const { firstDay, lastDay } = getWeekDates();
-
-      // Filter study data for current week
-      const weeklyData = studyData.filter(day => {
-        const date = new Date(day.date);
-        return date >= firstDay && date <= lastDay;
-      });
-
-      // Calculate study hours for each day
-      const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const hours = Array(7).fill(0);
-      
-      weeklyData.forEach(day => {
-        const date = new Date(day.date);
-        const dayIndex = (date.getDay() + 6) % 7; // Convert Sunday-based to Monday-based
-        hours[dayIndex] = day.studyHours || 0;
-      });
-
-      // Calculate statistics
-      const total = hours.reduce((sum, h) => sum + h, 0);
-      const average = total / 7;
-      const maxHours = Math.max(...hours);
-      const bestDayIndex = hours.indexOf(maxHours);
-      
-      const bestDay = {
-        day: weekDays[bestDayIndex],
-        hours: maxHours
-      };
-
-      const weeklyGoal = 20; // Weekly goal in hours
-      const goalProgress = (total / weeklyGoal) * 100;
-
-      setWeeklyStats({
-        studyHours: hours,
-        bestDay,
-        average,
-        total,
-        goalProgress: Math.min(goalProgress, 100)
-      });
-
-    } catch (error) {
-      console.error('Error loading weekly stats:', error);
-    }
-  };
-
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
       await Promise.all([
         loadStudyStreak(),
         loadRecentGrades(),
-        calculateStats(),
-        loadWeeklyStats() // Weekly stats'i de yenile
+        calculateStats()
       ]);
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -367,7 +286,7 @@ const Home = () => {
       ]}
     >
       <Text style={styles.dayLabel}>
-        {getEnglishDayName(day.date)}
+        {new Date(day.date).toLocaleDateString('tr-TR', { weekday: 'short' })}
       </Text>
       <View style={[
         styles.streakDay,
@@ -438,8 +357,8 @@ const Home = () => {
         <FontAwesome5 name="lightbulb" size={16} color="#388E3C" />
         <Text style={styles.motivationText}>
           {currentStreak > 5 
-            ? "You've got a great series!🎯" 
-            : 'Achieve success by working every day! 💪'}
+            ? 'Müthiş bir seri yakaladın! 🎯' 
+            : 'Her gün çalışarak başarıya ulaş! 💪'}
         </Text>
       </LinearGradient>
     </View>
@@ -715,132 +634,61 @@ const Home = () => {
     </View>
   );
 
-  const renderWeeklyFocus = () => {
-    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const maxHours = Math.max(...weeklyStats.studyHours);
-
-    return (
-      <View style={styles.weeklyFocusContainer}>
-        <LinearGradient
-          colors={['#1A237E', '#3949AB']}
-          style={styles.weeklyFocusGradient}
-        >
-          <View style={styles.weeklyHeader}>
-            <View>
-              <Text style={styles.weeklyTitle}>Weekly Focus</Text>
-              <Text style={styles.weeklySubtitle}>
-                {getWeekDates().firstDay.toLocaleDateString()} - {getWeekDates().lastDay.toLocaleDateString()}
-              </Text>
-            </View>
-            <View style={styles.weeklyTotal}>
-              <Text style={styles.weeklyTotalHours}>{weeklyStats.total}h</Text>
-              <Text style={styles.weeklyTotalLabel}>Total</Text>
-            </View>
-          </View>
-
-          <View style={styles.barChartContainer}>
-            {weekDays.map((day, index) => {
-              const height = maxHours > 0 ? (weeklyStats.studyHours[index] / maxHours) * 100 : 0;
-              return (
-                <View key={day} style={styles.barColumn}>
-                  <Animated.View
-                    style={[
-                      styles.bar,
-                      {
-                        height: `${height}%`,
-                        backgroundColor: height > 70 ? '#64FFDA' : 
-                                       height > 40 ? '#4DB6AC' : '#80CBC4'
-                      }
-                    ]}
-                  >
-                    <Text style={styles.barValue}>
-                      {weeklyStats.studyHours[index]}h
-                    </Text>
-                  </Animated.View>
-                  <Text style={styles.barLabel}>{day}</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          <View style={styles.weeklyStats}>
-            <View style={styles.weeklyStat}>
-              <FontAwesome5 name="star" size={16} color="#64FFDA" />
-              <View>
-                <Text style={styles.weeklyStatValue}>
-                  {weeklyStats.bestDay.hours}h
-                </Text>
-                <Text style={styles.weeklyStatLabel}>
-                  Best ({weeklyStats.bestDay.day})
-                </Text>
-              </View>
-            </View>
-            <View style={styles.weeklyStat}>
-              <FontAwesome5 name="clock" size={16} color="#64FFDA" />
-              <View>
-                <Text style={styles.weeklyStatValue}>
-                  {weeklyStats.average.toFixed(1)}h
-                </Text>
-                <Text style={styles.weeklyStatLabel}>Daily Avg</Text>
-              </View>
-            </View>
-            <View style={styles.weeklyStat}>
-              <FontAwesome5 name="check-circle" size={16} color="#64FFDA" />
-              <View>
-                <Text style={styles.weeklyStatValue}>
-                  {weeklyStats.goalProgress.toFixed(0)}%
-                </Text>
-                <Text style={styles.weeklyStatLabel}>Goal</Text>
-              </View>
-            </View>
-          </View>
-        </LinearGradient>
-      </View>
-    );
-  };
-
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => {
-            setFeaturesKey(prev => prev + 1);
-            onRefresh();
-          }}
-          colors={["#388E3C"]}
-          tintColor="#388E3C"
-          title="Refreshing..."
-          titleColor="#388E3C"
-        />
-      }
-    >
-      <Text style={styles.title}>Welcome!</Text>
-      <Text style={styles.subtitle}>Continue your success journey</Text>
-
-      {upcomingExams.length > 0 && (
-        <View style={styles.examSection}>
-          <Text style={styles.sectionTitle}>Upcoming Exams</Text>
-          <FlatList
-            horizontal
-            data={upcomingExams}
-            renderItem={renderExamCard}
-            keyExtractor={item => item.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.examList}
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setFeaturesKey(prev => prev + 1);
+              onRefresh();
+            }}
+            colors={["#388E3C"]}
+            tintColor="#388E3C"
+            title="Refreshing..."
+            titleColor="#388E3C"
           />
-        </View>
-      )}
+        }
+      >
+        <Text style={styles.title}>Welcome!</Text>
+        <Text style={styles.subtitle}>Continue your success journey</Text>
 
-      <FeatureCarousel />
+        {upcomingExams.length > 0 && (
+          <View style={styles.examSection}>
+            <Text style={styles.sectionTitle}>Upcoming Exams</Text>
+            <FlatList
+              horizontal
+              data={upcomingExams}
+              renderItem={renderExamCard}
+              keyExtractor={item => item.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.examList}
+            />
+          </View>
+        )}
 
-      {renderStats()}
-      {renderActivities()}
+        <FeatureCarousel />
 
-      {renderStreakSection()}
-      {renderWeeklyFocus()}
-    </ScrollView>
+        {renderStats()}
+        {renderActivities()}
+
+        {renderStreakSection()}
+      </ScrollView>
+
+      {/* Banner reklam direkt BannerAd componenti ile */}
+      <View style={styles.bannerContainer}>
+        <BannerAd
+          unitId={AdService.adUnitIds.banner}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: true,
+            keywords: ['education', 'study', 'exam'],
+          }}
+        />
+      </View>
+    </View>
   );
 };
 
@@ -1382,103 +1230,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
-  weeklyFocusContainer: {
-    marginTop: 20,
-    marginBottom: 30,
-    borderRadius: 20,
-    overflow: 'hidden',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  weeklyFocusGradient: {
-    padding: 20,
-  },
-  weeklyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  bannerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  weeklyTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  weeklySubtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 4,
-  },
-  weeklyTotal: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 12,
-    borderRadius: 12,
-  },
-  weeklyTotalHours: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#64FFDA',
-  },
-  weeklyTotalLabel: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-  },
-  barChartContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    height: 150,
-    marginBottom: 20,
-    paddingTop: 20,
-  },
-  barColumn: {
-    flex: 1,
-    alignItems: 'center',
-    height: '100%',
-    justifyContent: 'flex-end',
-  },
-  bar: {
-    width: 24,
-    borderRadius: 12,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingTop: 6,
-  },
-  barValue: {
-    fontSize: 10,
-    color: '#1A237E',
-    fontWeight: 'bold',
-  },
-  barLabel: {
-    marginTop: 8,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  weeklyStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-  },
-  weeklyStat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  weeklyStatValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  weeklyStatLabel: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
+    backgroundColor: 'transparent',
   },
 });
 

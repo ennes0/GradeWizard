@@ -42,6 +42,17 @@
     "plugins": [
       "expo-router",
       [
+        "react-native-google-mobile-ads",
+        {
+          "iosAppId": "ca-app-pub-7510384238146981~7328107511",
+          "androidAppId": "ca-app-pub-7510384238146981~7328107511",
+          "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
+          "skAdNetworkItems": [
+            "cstr6suwn9.skadnetwork"
+          ]
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "ios": {
