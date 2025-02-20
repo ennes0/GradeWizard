@@ -302,12 +302,14 @@ const Home = () => {
           <Text style={styles.streakEmoji}>🔥</Text>
           <View>
             <Text style={styles.streakTitle}>
-              {`Study Streak: ${currentStreak} days`}
+              {currentStreak > 0 
+                ? `${currentStreak} Day Streak!`
+                : 'Start Your Streak Today!'}
             </Text>
             <Text style={styles.streakSubtitle}>
               {currentStreak > 0 
-                ? "You're doing great, keep it up!"
-                : 'Start studying to begin your streak!'}
+                ? "You're making great progress!"
+                : "Track your daily study sessions"}
             </Text>
           </View>
         </View>
@@ -317,50 +319,95 @@ const Home = () => {
             style={styles.markTodayButton}
             onPress={handleMarkToday}
           >
-            <FontAwesome5 name="check" size={16} color="#FFF" style={styles.buttonIcon} />
-            <Text style={styles.markTodayText}>Today</Text>
+            <FontAwesome5 name="plus" size={16} color="#FFF" style={styles.buttonIcon} />
+            <Text style={styles.markTodayText}>Log Study</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
 
-      <View style={styles.streakInfo}>
-        <View style={styles.streakStat}>
-          <Text style={styles.streakStatValue}>
-            {studyStreak.filter(day => day.completed).length}
-          </Text>
-          <Text style={styles.streakStatLabel}>Total Days</Text>
-        </View>
-        <View style={styles.streakStat}>
-          <Text style={styles.streakStatValue}>
-            {getMaxStudyHours()}h
-          </Text>
-          <Text style={styles.streakStatLabel}>Longest Study</Text>
-        </View>
-        <View style={styles.streakStat}>
-          <Text style={styles.streakStatValue}>
-            {studyStreak.filter(day => 
-              new Date(day.date).getMonth() === new Date().getMonth() && day.completed
-            ).length}
-          </Text>
-          <Text style={styles.streakStatLabel}>This Month</Text>
-        </View>
-      </View>
-
-      <View style={styles.streakDays}>
-        {studyStreak.map((day, index) => renderStreakDay(day, index))}
-      </View>
-
       <LinearGradient
         colors={['#E8F5E9', '#C8E6C9']}
-        style={styles.streakMotivation}
+        style={styles.streakStatsCard}
       >
+        <View style={styles.streakInfo}>
+          <View style={styles.streakStat}>
+            <Text style={styles.streakStatValue}>
+              {studyStreak.filter(day => day.completed).length}
+            </Text>
+            <Text style={styles.streakStatLabel}>Total Days</Text>
+          </View>
+          
+          <View style={styles.streakDivider} />
+          
+          <View style={styles.streakStat}>
+            <Text style={styles.streakStatValue}>
+              {`${getMaxStudyHours()}h`}
+            </Text>
+            <Text style={styles.streakStatLabel}>Best Session</Text>
+          </View>
+          
+          <View style={styles.streakDivider} />
+          
+          <View style={styles.streakStat}>
+            <Text style={styles.streakStatValue}>
+              {studyStreak.filter(day => 
+                new Date(day.date).getMonth() === new Date().getMonth() && day.completed
+              ).length}
+            </Text>
+            <Text style={styles.streakStatLabel}>This Month</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      <View style={styles.streakCalendar}>
+        <Text style={styles.calendarTitle}>Last 7 Days</Text>
+        <View style={styles.streakDays}>
+          {studyStreak.map((day, index) => (
+            <Animated.View 
+              key={day.date}
+              style={[
+                styles.dayContainer,
+                { 
+                  opacity: animatedValues[index] || new Animated.Value(1),
+                  transform: [{ 
+                    scale: (animatedValues[index] || new Animated.Value(1))
+                      .interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.5, 1]
+                      })
+                  }]
+                }
+              ]}
+            >
+              <Text style={styles.dayLabel}>
+                {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+              </Text>
+              <LinearGradient
+                colors={day.completed 
+                  ? ['#4CAF50', '#388E3C']
+                  : ['#E0E0E0', '#BDBDBD']}
+                style={styles.dayBadge}
+              >
+                {day.completed && (
+                  <FontAwesome5 name="check" size={12} color="#FFF" />
+                )}
+              </LinearGradient>
+              {day.studyHours > 0 && (
+                <Text style={styles.hoursLabel}>{day.studyHours}h</Text>
+              )}
+            </Animated.View>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.streakMotivation}>
         <FontAwesome5 name="lightbulb" size={16} color="#388E3C" />
         <Text style={styles.motivationText}>
           {currentStreak > 5 
-            ? 'Müthiş bir seri yakaladın! 🎯' 
-            : 'Her gün çalışarak başarıya ulaş! 💪'}
+            ? 'Outstanding commitment! Keep up the momentum!' 
+            : 'Consistency is key to academic success!'}
         </Text>
-      </LinearGradient>
+      </View>
     </View>
   );
 
@@ -631,13 +678,37 @@ const Home = () => {
           <Text style={styles.emptyText}>No grades recorded yet</Text>
         </View>
       )}
+      
+      {/* Activities altına yeni banner reklam */}
+      <View style={styles.lowerBannerContainer}>
+        <BannerAd
+          unitId={AdService.adUnitIds.banner}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: true,
+            keywords: ['education', 'study', 'exam'],
+          }}
+        />
+      </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
+      {/* Üst banner reklam */}
+      <View style={styles.topBannerContainer}>
+        <BannerAd
+          unitId={AdService.adUnitIds.banner}
+          size={BannerAdSize.BANNER}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: true,
+            keywords: ['education', 'study', 'exam'],
+          }}
+        />
+      </View>
+
       <ScrollView 
-        style={styles.container}
+        style={[styles.scrollView]} // Updated style
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -671,23 +742,23 @@ const Home = () => {
 
         <FeatureCarousel />
 
+        {/* Orta banner reklam */}
+        <View style={styles.middleBannerContainer}>
+          <BannerAd
+            unitId={AdService.adUnitIds.banner}
+            size={BannerAdSize.LARGE_BANNER}
+            requestOptions={{
+              requestNonPersonalizedAdsOnly: true,
+              keywords: ['education', 'study', 'exam'],
+            }}
+          />
+        </View>
+
         {renderStats()}
         {renderActivities()}
 
         {renderStreakSection()}
       </ScrollView>
-
-      {/* Banner reklam direkt BannerAd componenti ile */}
-      <View style={styles.bannerContainer}>
-        <BannerAd
-          unitId={AdService.adUnitIds.banner}
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-          requestOptions={{
-            requestNonPersonalizedAdsOnly: true,
-            keywords: ['education', 'study', 'exam'],
-          }}
-        />
-      </View>
     </View>
   );
 };
@@ -696,7 +767,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#E8F5E9",
-    padding: 20,
+    padding: 8, // 20'den 8'e düşürüldü
   },
   title: {
     fontSize: 28,
@@ -736,7 +807,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 20,
-    padding: 10,
+    padding: 8, // 15'ten 8'e düşürüldü
   },
   statCard: {
     backgroundColor: '#FFFFFF',
@@ -772,7 +843,7 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     backgroundColor: '#FFFFFF',
-    padding: 15,
+    padding: 12, // 15'ten 12'ye düşürüldü
     borderRadius: 10,
     marginBottom: 10,
     flexDirection: 'row',
@@ -825,8 +896,8 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   streakContainer: {
-    margin: 10,
-    padding: 15,
+    margin: 6, // 10'dan 6'ya düşürüldü
+    padding: 12, // 15'ten 12'ye düşürüldü
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     shadowColor: '#000',
@@ -900,7 +971,7 @@ const styles = StyleSheet.create({
   },
   featureSlide: {
     width: width,
-    paddingHorizontal: 20,
+    paddingHorizontal: 8, // 20'den 8'e düşürüldü
   },
   featureContent: {
     borderRadius: 20,
@@ -980,8 +1051,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   examList: {
-    paddingHorizontal: 10,
-    paddingVertical: 15,
+    paddingHorizontal: 6, // 10'dan 6'ya düşürüldü
+    paddingVertical: 12,
   },
   examCard: {
     backgroundColor: '#FFF',
@@ -1138,7 +1209,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4, // 5'ten 4'e düşürüldü
   },
   viewAllButton: {
     flexDirection: 'row',
@@ -1230,13 +1301,60 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
-  bannerContainer: {
+  topBannerContainer: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
+    zIndex: 999,
     backgroundColor: 'transparent',
+    alignItems: 'center',
+  },
+
+  middleBannerContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+    backgroundColor: 'transparent',
+  },
+  scrollView: {
+    marginTop: 45, // Banner için margin
+    paddingHorizontal: 6, // Yeni eklendi
+  },
+  lowerBannerContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 15,
+    marginBottom: 5,
+    backgroundColor: 'transparent',
+  },
+  streakStatsCard: {
+    borderRadius: 15,
+    padding: 15,
+    marginTop: 15,
+  },
+  streakDivider: {
+    width: 1,
+    height: '80%',
+    backgroundColor: '#E0E0E0',
+  },
+  calendarTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  dayBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+  },
+  hoursLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
   },
 });
 

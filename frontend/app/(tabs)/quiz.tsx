@@ -9,6 +9,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as Notifications from 'expo-notifications';
 import { quizApi } from '../../services/api';
+import { BannerAd, BannerAdSize, InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
+import AdService from '../../services/AdService';
 
 interface QuizQuestion {
   question: string;
@@ -200,32 +202,40 @@ export default function Quiz() {
 
   const handleQuizComplete = async () => {
     try {
+      setLoading(true);
       const correctCount = Object.entries(userAnswers).filter(
         ([idx, answer]) => answer === quizzes[parseInt(idx)].correctAnswer
       ).length;
 
-      const newScore = correctCount * 10;
-      
-      // Quiz tamamlandığında bildirimi ayarla
-      await scheduleNextQuizNotification();
-      
+      // Interstitial reklam göster
+      const interstitial = InterstitialAd.createForAdRequest(
+        AdService.getAdUnitId('interstitial'),
+        {
+          requestNonPersonalizedAdsOnly: true,
+          keywords: ['education', 'quiz', 'learning'],
+        }
+      );
+
+      interstitial.addAdEventListener(AdEventType.LOADED, () => {
+        interstitial.show();
+      });
+
+      interstitial.load();
+
       // Quiz istatistiklerini kaydet
       await AsyncStorage.setItem('lastQuizDate', new Date().toDateString());
       await AsyncStorage.setItem('quizStats', JSON.stringify({
-        totalScore: score + newScore,
+        totalScore: score + (correctCount * 10),
         streak: streak + (correctCount >= 3 ? 1 : 0)
       }));
 
       setQuizCompleted(true);
       setCanPlay(false);
-
-      // Tamamlama bildirimi göster
-      Alert.alert(
-        "Quiz Completed!",
-        `Congratulations! You earned ${correctCount * 10} points.\nSee you tomorrow with new questions!`
-      );
+      
     } catch (error) {
-      console.error('Error completing quiz:', error);
+      console.error('Quiz completion error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -273,6 +283,18 @@ export default function Quiz() {
         <Text style={styles.questionCount}>
           Question {currentQuizIndex + 1}/5
         </Text>
+
+        {/* Question Banner */}
+        <View style={styles.questionBannerContainer}>
+          <BannerAd
+            unitId={AdService.getAdUnitId('banner')}
+            size={BannerAdSize.BANNER}
+            requestOptions={{
+              requestNonPersonalizedAdsOnly: true,
+              keywords: ['education', 'quiz', 'learning'],
+            }}
+          />
+        </View>
 
         {/* Question Card */}
         <View style={styles.questionCard}>
@@ -501,6 +523,8 @@ export default function Quiz() {
             Next quiz available tomorrow at 10:00 AM
           </Text>
         </LinearGradient>
+
+        {/* Alt banner reklam */}
       </LinearGradient>
     </View>
   );
@@ -561,7 +585,22 @@ export default function Quiz() {
   // Ana render fonksiyonunda koşulları debug edelim
   return (
     <LinearGradient colors={['#E8F5E9', '#C8E6C9']} style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContainer}>
+      {/* Üst banner reklam */}
+      <View style={styles.bannerContainer}>
+        <BannerAd
+          unitId={AdService.getAdUnitId('banner')}
+          size={BannerAdSize.BANNER}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: true,
+            keywords: ['education', 'quiz', 'learning'],
+          }}
+        />
+      </View>
+
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={[styles.scrollContainer, { marginTop: 50 }]} // Banner için margin eklendi
+      >
         {loading ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color="#388E3C" />
@@ -577,6 +616,7 @@ export default function Quiz() {
           renderCurrentQuestion()
         )}
       </ScrollView>
+
       {feedbackVisible && <FeedbackOverlay />}
     </LinearGradient>
   );
@@ -1121,5 +1161,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginRight: 8,
+  },
+  bannerContainer: {
+    position: 'absolute',
+    top: 0, // bottom yerine top
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+  },
+  questionBannerContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginVertical: 10,
+    backgroundColor: 'transparent',
   },
 });

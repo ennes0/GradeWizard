@@ -97,6 +97,20 @@ async function checkNotificationPermissions() {
 
 // Main notification functions
 const NotificationService = {
+  setup: async () => {
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+      });
+    }
+
+    if (!Device.isDevice) return false;
+    
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === 'granted';
+  },
+
   registerForPushNotificationsAsync: async () => {
     let token;
 
@@ -288,6 +302,7 @@ const NotificationService = {
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(10, 0, 0); // Her gün sabah 10'da
 
+      
       await scheduleNotification({
         title: "New Quiz Ready! 🎯",
         body: "Your daily quiz is waiting. Ready to test your knowledge?",
@@ -296,6 +311,23 @@ const NotificationService = {
       });
     } catch (error) {
       console.error('Error scheduling quiz notification:', error);
+    }
+  },
+
+  schedulePredictionNotification: async (predictedGrade: number) => {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Grade Prediction Update 📊",
+          body: `Based on your recent performance, you could achieve ${predictedGrade}! Keep it up!`,
+          data: { type: 'prediction' },
+        },
+        trigger: {
+          seconds: 1,
+        },
+      });
+    } catch (error) {
+      console.error('Error scheduling prediction notification:', error);
     }
   },
 

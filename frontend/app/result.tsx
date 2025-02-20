@@ -9,29 +9,28 @@ const { width } = Dimensions.get('window');
 
 export default function ResultScreen() {
   const params = useLocalSearchParams();
-  const { grade, studyHours, motivation } = params;
-  
-  const scoreAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(width)).current;
-
   const [feedback, setFeedback] = useState('');
   const [showFeedback, setShowFeedback] = useState(false);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
 
+  // State ve animasyon değerlerini tanımla
+  const [displayedGrade, setDisplayedGrade] = useState(0);
+  const scoreAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(width)).current;
+
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
+    console.log("Result Screen Params:", params);
+    const numericGrade = parseFloat(params.grade as string);
+    console.log("Parsed Grade:", numericGrade);
+
+    if (!isNaN(numericGrade)) {
+      // Animasyonları başlat
       Animated.parallel([
-        Animated.spring(scoreAnim, {
-          toValue: Number(grade),  // Convert to number
-          friction: 5,
-          tension: 40,
-          useNativeDriver: false,
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
         }),
         Animated.spring(slideAnim, {
           toValue: 0,
@@ -39,8 +38,22 @@ export default function ResultScreen() {
           tension: 40,
           useNativeDriver: true,
         }),
-      ]),
-    ]).start();
+        Animated.timing(scoreAnim, {
+          toValue: numericGrade,
+          duration: 1500,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    }
+  }, [params.grade]);
+
+  // Score animasyonu için listener
+  useEffect(() => {
+    const listener = scoreAnim.addListener(({ value }) => {
+      setDisplayedGrade(value);
+    });
+
+    return () => scoreAnim.removeListener(listener);
   }, []);
 
   const getPredictionEmoji = (score) => {
@@ -59,8 +72,6 @@ export default function ResultScreen() {
     return { title: 'Starting Point', desc: 'Regular study will improve this!' };
   };
 
-  const message = getMessage(Number(grade));
-
   const handleReset = () => {
     // Navigate back to GradePrediction with reset flag
     router.push({
@@ -73,9 +84,9 @@ export default function ResultScreen() {
     setLoadingFeedback(true);
     try {
       const response = await axios.post('https://gradewizard.onrender.com/generate_feedback', {
-        grade: Number(grade),
-        studyHours: Number(studyHours),
-        motivation: Number(motivation),
+        grade: Number(params.grade),
+        studyHours: Number(params.studyHours),
+        motivation: Number(params.motivation),
         subjects: params.subjects?.split(',') || []
       });
       
@@ -113,22 +124,25 @@ export default function ResultScreen() {
     </Modal>
   );
 
+  const renderScore = () => (
+    <View style={styles.scoreContainer}>
+      <Text style={styles.score}>
+        {displayedGrade.toFixed(2)}
+      </Text>
+      <Text style={styles.scoreLabel}>/100</Text>
+    </View>
+  );
+
   return (
     <LinearGradient colors={['#E8F5E9', '#C8E6C9']} style={styles.container}>
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <View style={styles.emojiContainer}>
-          <Text style={styles.emoji}>{getPredictionEmoji(Number(grade))}</Text>
+          <Text style={styles.emoji}>
+            {getPredictionEmoji(displayedGrade)}
+          </Text>
         </View>
 
-        <View style={styles.scoreContainer}>
-          <Animated.Text style={styles.score}>
-            {scoreAnim.interpolate({
-              inputRange: [0, Number(grade)],
-              outputRange: ['0', grade.toString()],
-            })}
-          </Animated.Text>
-          <Text style={styles.scoreLabel}>/100</Text>
-        </View>
+        {renderScore()}
 
         <Animated.View
           style={[
@@ -136,19 +150,24 @@ export default function ResultScreen() {
             { transform: [{ translateX: slideAnim }] }
           ]}
         >
-          <Text style={styles.messageTitle}>{message.title}</Text>
-          <Text style={styles.messageDesc}>{message.desc}</Text>
+          <Text style={styles.messageTitle}>
+            {getMessage(displayedGrade).title}
+          </Text>
+          <Text style={styles.messageDesc}>
+            {getMessage(displayedGrade).desc}
+          </Text>
         </Animated.View>
 
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <FontAwesome5 name="clock" size={24} color="#388E3C" />
-            <Text style={styles.statValue}>{Number(studyHours)}</Text>
+            <Text style={styles.statValue}>{Number(params.studyHours)}</Text>
             <Text style={styles.statLabel}>Study Hours</Text>
           </View>
+          
           <View style={styles.statCard}>
             <FontAwesome5 name="star" size={24} color="#388E3C" />
-            <Text style={styles.statValue}>{Number(motivation)}/10</Text>
+            <Text style={styles.statValue}>{Number(params.motivation)}/10</Text>
             <Text style={styles.statLabel}>Motivation</Text>
           </View>
         </View>
@@ -207,11 +226,15 @@ const styles = StyleSheet.create({
     fontSize: 72,
     fontWeight: 'bold',
     color: '#388E3C',
+    includeFontPadding: false,
+    textAlignVertical: 'bottom',
   },
   scoreLabel: {
     fontSize: 24,
     color: '#666',
     marginLeft: 8,
+    includeFontPadding: false,
+    textAlignVertical: 'bottom',
   },
   messageContainer: {
     backgroundColor: '#FFFFFF',

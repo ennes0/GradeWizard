@@ -5,25 +5,38 @@ import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AnimatedTabBar from "../components/AnimatedTabBar";
 import * as Notifications from "expo-notifications";
-import { registerForPushNotificationsAsync, scheduleMotivationalNotification } from "../services/NotificationService";
-import AdService from "@/services/AdService";
+
+// Temel notification handler ayarı
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 export default function Layout() {
   const router = useRouter();
   const segments = useSegments();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if we're in onboarding or user setup
   const isInSetupFlow = segments[0] === "onboarding" || segments[0] === "user-setup";
 
   useEffect(() => {
     checkOnboarding();
+    checkNotificationPermissions(); // Sadece izin kontrolü
   }, []);
 
-  useEffect(() => {
-    // Initialize AdMob
-    AdService.initialize();
-  }, []);
+  const checkNotificationPermissions = async () => {
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      if (existingStatus !== 'granted') {
+        await Notifications.requestPermissionsAsync();
+      }
+    } catch (error) {
+      console.error('Notification permission error:', error);
+    }
+  };
 
   const checkOnboarding = async () => {
     try {
@@ -37,7 +50,6 @@ export default function Layout() {
       } else if (!userProfile) {
         router.replace("/user-setup");
       } else {
-        // Değiştirilen kısım: Doğrudan Home sayfasına yönlendir
         router.replace("/(tabs)/Home");
       }
     } catch (error) {
@@ -64,7 +76,6 @@ export default function Layout() {
     <>
       <StatusBar style="dark" />
       <Stack
-      
         screenOptions={{
           headerStyle: {
             backgroundColor: "#E8F5E9",
@@ -74,8 +85,8 @@ export default function Layout() {
             fontWeight: "bold",
           },
           headerShadowVisible: false,
-          gestureEnabled: false, // Disable swipe gesture
-          animation: "none", // Disable animation
+          gestureEnabled: false,
+          animation: "none",
         }}
       >
         <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
@@ -87,7 +98,6 @@ export default function Layout() {
         <Stack.Screen name="grades" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="adtest" options={{ headerShown: false, gestureEnabled: false }} />
       </Stack>
-      {/* Show TabBar when not in onboarding or user setup */}
       {!isInSetupFlow && <AnimatedTabBar tabs={tabs} />}
     </>
   );

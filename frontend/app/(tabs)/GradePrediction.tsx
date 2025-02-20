@@ -9,6 +9,9 @@ import { ProgressBar, Card } from "react-native-paper";
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';  // Add this import at the top
+import { InterstitialAd, TestIds, BannerAd, BannerAdSize, AdEventType } from 'react-native-google-mobile-ads';
+import AdService from '../../services/AdService';
+import NotificationService from '../../services/NotificationService';
 
 const { width } = Dimensions.get('window');
 
@@ -167,15 +170,53 @@ const GradePrediction = () => {
     return requiredFields.every(field => formData[field].trim() !== '');
   };
 
+  const loadAndShowAd = async () => {
+    try {
+      const interstitial = InterstitialAd.createForAdRequest(AdService.getAdUnitId('interstitial'), {
+        requestNonPersonalizedAdsOnly: true,
+        keywords: ['education', 'study', 'exam'],
+      });
+
+      const loadPromise = new Promise((resolve, reject) => {
+        interstitial.addAdEventListener('loaded', () => {
+          interstitial.show();
+          resolve(true);
+        });
+        interstitial.addAdEventListener('error', reject);
+      });
+
+      interstitial.load();
+      await loadPromise;
+
+    } catch (error) {
+      console.log('Ad failed to load:', error);
+    }
+  };
+
   const startTest = async () => {
     if (!isFormValid()) {
       Alert.alert('Error', 'Please fill in all fields correctly.');
       return;
     }
 
+    // Test başlamadan önce interstitial reklam göster
+    const interstitial = InterstitialAd.createForAdRequest(AdService.getAdUnitId('interstitial'), {
+      requestNonPersonalizedAdsOnly: true,
+      keywords: ['education', 'study', 'exam'],
+    });
+
+    interstitial.load();
+    interstitial.addAdEventListener(AdEventType.LOADED, () => {
+      interstitial.show();
+    });
+
     setLoading(true);
     try {
-      const response = await axios.post("https://gradewizard.onrender.com/generate_questions", formData);
+      // Önce reklamı göster
+      await loadAndShowAd();
+
+      // Sonra normal test akışına devam et
+      const response = await axios.post("https://gradewizard-1.onrender.com/generate_questions", formData);
       console.log("API Response:", response.data); // Debug log
       
       if (response.data?.questions && response.data.questions.length > 0) {
@@ -297,29 +338,36 @@ const GradePrediction = () => {
   const submitPrediction = async (finalAnswers) => {
     setLoading(true);
     try {
-      const response = await axios.post("https://192.168.1.199:8000/predict", {
+      const response = await axios.post("https://gradewizard-1.onrender.com/predict", {
         answers: finalAnswers,
         formData: formData
       });
       
-      const predictedGrade = response.data.predicted_grade;
-      await saveGrade(predictedGrade);
+      console.log("Prediction Response:", response.data); // Debug için
       
-      // Fix the route path
-      router.push({
-        pathname: '../result',
-        params: {
-          grade: predictedGrade,
-          studyHours: formData.studyHours,
-          motivation: formData.motivation
-        }
-      });
-
+      if (response.data && typeof response.data.predicted_grade === 'number') {
+        const predictedGrade = response.data.predicted_grade;
+        await saveGrade(predictedGrade);
+        
+        // Route parametrelerini güncelledik
+        router.replace({
+          pathname: "/result",
+          params: {
+            grade: predictedGrade.toString(),
+            studyHours: formData.studyHours,
+            motivation: formData.motivation,
+            subjects: [formData.topic1, formData.topic2, formData.topic3].join(',')
+          }
+        });
+      } else {
+        throw new Error("Invalid prediction response");
+      }
     } catch (error) {
       console.error('Prediction error:', error);
-      Alert.alert("Error", "Prediction could not be made. Please try again.");
+      Alert.alert("Error", "Could not get prediction. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const getPredictionEmoji = (grade) => {
@@ -558,8 +606,21 @@ const GradePrediction = () => {
 
   return (
     <LinearGradient colors={["#E8F5E9", "#C8E6C9"]} style={styles.container}>
-      <DisclaimerModal />
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      {/* Üst banner reklam */}
+      <View style={styles.bannerContainer}>
+        <BannerAd
+          unitId={AdService.getAdUnitId('banner')}
+          size={BannerAdSize.BANNER}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: true,
+            keywords: ['education', 'study', 'exam'],
+          }}
+        />
+      </View>
+
+      <ScrollView 
+        contentContainerStyle={[styles.scrollContainer, { marginTop: 50, paddingBottom: 100 }]} // Alt banner için padding eklendi
+      >
         <Text style={styles.title}>
           <FontAwesome5 name="graduation-cap" size={28} color="#388E3C" /> Grade Wizard
         </Text>
@@ -567,9 +628,44 @@ const GradePrediction = () => {
         {!questions || questions.length === 0 ? (
           // Form view
           <>
-            {inputFields.map((input, index) => 
-              renderInput(input.placeholder, input.field, index, input.type)
-            )}
+            {inputFields.map((input, index) => (
+              <Animated.View
+                key={`input-${input.field}`}  // Unique key ekle
+                style={{
+                  width: '90%',
+                  transform: [{ translateX: inputAnims[index] }],
+                }}
+              >
+                <TextInput
+                  style={[
+                    styles.input,
+                    formData[input.field] ? styles.inputFilled : null,
+                    errors[input.field] ? styles.inputError : null
+                  ]}
+                  placeholder={input.placeholder}
+                  placeholderTextColor="#94A3B8"
+                  keyboardType={input.type}
+                  value={formData[input.field]}
+                  onChangeText={(text) => handleInputChange(input.field, text)}
+                  onFocus={() => {
+                    Animated.spring(inputAnims[index], {
+                      toValue: -10,
+                      useNativeDriver: true,
+                      tension: 50,
+                    }).start();
+                  }}
+                  onBlur={() => {
+                    Animated.spring(inputAnims[index], {
+                      toValue: 0,
+                      useNativeDriver: true,
+                    }).start();
+                  }}
+                />
+                {errors[input.field] ? (
+                  <Text style={styles.errorText}>{errors[input.field]}</Text>
+                ) : null}
+              </Animated.View>
+            ))}
             
             <Animated.View style={{ opacity: buttonAnim, width: '90%' }}>
               <TouchableOpacity 
@@ -598,6 +694,18 @@ const GradePrediction = () => {
         )}
 
         {prediction !== null && <PredictionResult grade={prediction} />}
+
+        {/* Alt banner reklam - ScrollView içinde */}
+        <View style={styles.bottomBannerContainer}>
+          <BannerAd
+            unitId={AdService.getAdUnitId('banner')}
+            size={BannerAdSize.MEDIUM_RECTANGLE}
+            requestOptions={{
+              requestNonPersonalizedAdsOnly: true,
+              keywords: ['education', 'study', 'exam'],
+            }}
+          />
+        </View>
       </ScrollView>
     </LinearGradient>
   );
@@ -905,6 +1013,20 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#E8F5E9',
+  },
+  bannerContainer: {
+    position: 'absolute',
+    top: 0, // bottom yerine top kullanıldı
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+  },
+  bottomBannerContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+    width: '100%',
   },
 });
 

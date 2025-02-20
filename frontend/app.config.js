@@ -7,14 +7,14 @@ module.exports = {
   icon: './assets/images/loggo2.png',
   userInterfaceStyle: 'automatic',
   splash: {
-    image: './assets/images/loggo2.png',
+    image: './assets/images/loggo2.png',  
     resizeMode: 'contain',
-    backgroundColor: "#2e960f"  // Renk güncellendi
+    backgroundColor: "#095028"  // Renk güncellendi  // 2e960f
   },
   android: {
     package: "com.enesoy.gradwizard",
     adaptiveIcon: {
-      foregroundImage: "./assets/images/loggo.png",
+      foregroundImage: "./assets/images/loggo2.png",
       backgroundColor: "#2e960f"  // Renk güncellendi
     },
     permissions: [

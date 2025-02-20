@@ -11,6 +11,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AvatarPicker } from '../../components/AvatarPicker';
 import { scheduleAllNotifications, cancelAllNotifications } from '../../services/NotificationService';
 import { useLanguage } from '../../contexts/LanguageContext'; // Add this import
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';  // Yeni import
+import AdService from '../../services/AdService';  // Yeni import
 
 export default function Profile() {
   const { t, language, changeLanguage } = useLanguage();
@@ -114,19 +116,12 @@ export default function Profile() {
     }
   };
 
-  const handleNotificationTest = async () => {
-    try {
-      await cancelAllNotifications(); // First clear existing notifications
-      await scheduleAllNotifications();
-      Alert.alert(
-        "Testing Notifications",
-        "Different types of notifications have been scheduled. You will start seeing them in a few seconds.",
-        [{ text: "OK", style: "default" }]
-      );
-    } catch (error) {
-      console.error('Notification test error:', error);
-      Alert.alert("Error", "An error occurred while testing notifications.");
-    }
+  const handleRemoveAds = () => {
+    Alert.alert(
+      "Premium Feature",
+      "This feature will be available soon!",
+      [{ text: "OK", style: "default" }]
+    );
   };
 
   const renderEducationInfo = () => {
@@ -221,6 +216,18 @@ export default function Profile() {
           <Text style={styles.interestText}>{getInterestNames(userData.interests)}</Text>
         </View>
 
+        {/* Yeni banner reklam bölümü */}
+        <View style={styles.adContainer}>
+          <BannerAd
+            unitId={AdService.getAdUnitId('banner')}
+            size={BannerAdSize.MEDIUM_RECTANGLE}
+            requestOptions={{
+              requestNonPersonalizedAdsOnly: true,
+              keywords: ['education', 'study', 'exam'],
+            }}
+          />
+        </View>
+
         <View style={styles.quickActions}>
           <TouchableOpacity 
             style={styles.actionButton}
@@ -256,14 +263,14 @@ export default function Profile() {
 
           <TouchableOpacity 
             style={styles.settingItem}
-            onPress={handleNotificationTest}
+            onPress={handleRemoveAds}
           >
             <View style={styles.settingLeft}>
-              <FontAwesome5 name="bell" size={20} color="#388E3C" />
+              <FontAwesome5 name="crown" size={20} color="#FFD700" />
               <View>
-                <Text style={styles.settingTitle}>Test Notifications</Text>
+                <Text style={styles.settingTitle}>Remove Ads</Text>
                 <Text style={styles.settingDescription}>
-                  Try all notification types
+                  Go Premium - Coming Soon
                 </Text>
               </View>
             </View>
@@ -468,6 +475,17 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     marginRight: 8,
+  },
+  adContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginVertical: 20,
+    backgroundColor: 'transparent',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
 });
 

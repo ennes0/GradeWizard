@@ -12,7 +12,7 @@
     "splash": {
       "image": "./assets/images/loggo2.png",
       "resizeMode": "contain",
-      "backgroundColor": "#23720B"
+      "backgroundColor": "#095028"
     },
     "ios": {
       "supportsTablet": true,
@@ -73,7 +73,7 @@
       "typedRoutes": true
     },
     "notification": {
-      "icon": "./assets/images/loggo.png",
+      "icon": "./assets/images/loggo2.png",
       "color": "#51B402",
       "iosDisplayInForeground": true,
       "androidMode": "default",

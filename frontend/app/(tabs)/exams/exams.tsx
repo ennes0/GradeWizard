@@ -8,6 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { BannerAd, BannerAdSize, InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
+import AdService from '../../../services/AdService';
 
 interface Exam {
   id: string;
@@ -313,6 +315,22 @@ export default function ExamsScreen() {
   const generateStudyPlan = async (exam: Exam) => {
     setIsGeneratingPlan(true);
     try {
+      // Önce interstitial reklamı göster
+      const interstitial = InterstitialAd.createForAdRequest(
+        AdService.getAdUnitId('interstitial'),
+        {
+          requestNonPersonalizedAdsOnly: true,
+          keywords: ['education', 'study', 'exam'],
+        }
+      );
+
+      interstitial.addAdEventListener(AdEventType.LOADED, () => {
+        interstitial.show();
+      });
+
+      interstitial.load();
+
+      // Study plan oluşturma işlemleri
       const daysUntilExam = Math.ceil(
         (new Date(exam.examDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
       );
@@ -356,6 +374,18 @@ export default function ExamsScreen() {
     } finally {
       setIsGeneratingPlan(false);
     }
+  };
+
+  const handleStudyPlanCreation = async () => {
+    // Study plan oluşturulduğunda interstitial reklam göster
+    const interstitial = InterstitialAd.createForAdRequest(AdService.getAdUnitId('interstitial'));
+    
+    interstitial.load();
+    interstitial.addAdEventListener(AdEventType.LOADED, () => {
+      interstitial.show();
+    });
+
+    // ...rest of existing handleStudyPlanCreation code...
   };
 
   const renderAddExamModal = () => (
@@ -467,115 +497,129 @@ export default function ExamsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Exams</Text>
-        <TouchableOpacity 
-          style={styles.addButton} 
-          onPress={() => setShowAddModal(true)}
-        >
-          <FontAwesome5 name="plus" size={20} color="#FFF" />
-        </TouchableOpacity>
-      </View>
-
-      {exams.length > 0 ? (
-        <FlatList
-          data={exams}
-          renderItem={renderExamCard}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <FontAwesome5 name="book" size={50} color="#C8E6C9" />
-          <Text style={styles.emptyText}>No exams added yet</Text>
-          <Text style={styles.emptySubText}>Click + button to add a new exam</Text>
+      <ScrollView>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Exams</Text>
+          <TouchableOpacity 
+            style={styles.addButton} 
+            onPress={() => setShowAddModal(true)}
+          >
+            <FontAwesome5 name="plus" size={20} color="#FFF" />
+          </TouchableOpacity>
         </View>
-      )}
 
-      {renderAddExamModal()}
+        {exams.length > 0 ? (
+          <FlatList
+            data={exams}
+            renderItem={renderExamCard}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <FontAwesome5 name="book" size={50} color="#C8E6C9" />
+            <Text style={styles.emptyText}>No exams added yet</Text>
+            <Text style={styles.emptySubText}>Click + button to add a new exam</Text>
+          </View>
+        )}
 
-      <Modal
-        visible={showStudyPlanModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => {
-          setShowStudyPlanModal(false);
-          setSelectedExam(null);
-        }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create Study Plan</Text>
-            
-            <Text style={styles.inputLabel}>Daily Study Hours</Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={studyPlanHours}
-              onChangeText={setStudyPlanHours}
-              placeholder="How many hours will you study per day?"
-            />
+        {renderAddExamModal()}
 
-            {isGeneratingPlan && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#388E3C" />
-                <Text style={styles.loadingText}>
-                  Generating your personalized study plan...{'\n'}
-                  This may take a moment.
-                </Text>
+        <Modal
+          visible={showStudyPlanModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => {
+            setShowStudyPlanModal(false);
+            setSelectedExam(null);
+          }}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Create Study Plan</Text>
+              
+              <Text style={styles.inputLabel}>Daily Study Hours</Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                value={studyPlanHours}
+                onChangeText={setStudyPlanHours}
+                placeholder="How many hours will you study per day?"
+              />
+
+              {isGeneratingPlan && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#388E3C" />
+                  <Text style={styles.loadingText}>
+                    Generating your personalized study plan...{'\n'}
+                    This may take a moment.
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowStudyPlanModal(false)}
+                  disabled={isGeneratingPlan}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[
+                    styles.modalButton, 
+                    styles.saveButton,
+                    isGeneratingPlan && styles.disabledButton
+                  ]}
+                  onPress={() => selectedExam && generateStudyPlan(selectedExam)}
+                  disabled={isGeneratingPlan}
+                >
+                  {isGeneratingPlan ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={styles.saveButtonText}>Create</Text>
+                  )}
+                </TouchableOpacity>
               </View>
-            )}
+            </View>
+          </View>
+        </Modal>
 
-            <View style={styles.modalButtons}>
+        <Modal
+          visible={showStudyPlanDetailsModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowStudyPlanDetailsModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, styles.studyPlanModalContent]}>
+              <Text style={styles.modalTitle}>Study Plan</Text>
+              <ScrollView style={styles.studyPlanScroll}>
+                <Text style={styles.studyPlanText}>{selectedStudyPlan}</Text>
+              </ScrollView>
               <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowStudyPlanModal(false)}
-                disabled={isGeneratingPlan}
+                style={[styles.modalButton, styles.closeButton]}
+                onPress={() => setShowStudyPlanDetailsModal(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[
-                  styles.modalButton, 
-                  styles.saveButton,
-                  isGeneratingPlan && styles.disabledButton
-                ]}
-                onPress={() => selectedExam && generateStudyPlan(selectedExam)}
-                disabled={isGeneratingPlan}
-              >
-                {isGeneratingPlan ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : (
-                  <Text style={styles.saveButtonText}>Create</Text>
-                )}
+                <Text style={styles.closeButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      </ScrollView>
 
-      <Modal
-        visible={showStudyPlanDetailsModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowStudyPlanDetailsModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, styles.studyPlanModalContent]}>
-            <Text style={styles.modalTitle}>Study Plan</Text>
-            <ScrollView style={styles.studyPlanScroll}>
-              <Text style={styles.studyPlanText}>{selectedStudyPlan}</Text>
-            </ScrollView>
-            <TouchableOpacity 
-              style={[styles.modalButton, styles.closeButton]}
-              onPress={() => setShowStudyPlanDetailsModal(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      {/* Banner reklam */}
+      <View style={styles.bannerContainer}>
+        <BannerAd
+          unitId={AdService.getAdUnitId('banner')}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: true,
+            keywords: ['education', 'study', 'exam'],
+          }}
+        />
+      </View>
     </View>
   );
 }
@@ -924,5 +968,13 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+  bannerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
   },
 });
