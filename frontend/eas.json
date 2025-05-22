@@ -36,13 +36,14 @@
         "resourceClass": "m-medium",
         "buildConfiguration": "Release",
         "image": "latest"
-      }
+      },
+      "submitProfile": "production"
     }
   },
-"submit": {
-  "production": {
-    "ascAppId": "6741734068"
+  "submit": {
+    "production": {
+      "ascAppId": "6741734068"
+    }
   }
 }
 
-}
