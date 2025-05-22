@@ -33,9 +33,6 @@
     "production": {
       "autoIncrement": true,
       "distribution": "store",
-      "android": {
-        "buildType": "aab"
-      },
       "ios": {
         "resourceClass": "m-medium",
         "buildConfiguration": "Release",
