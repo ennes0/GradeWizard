@@ -36,9 +36,17 @@
       "ios": {
         "resourceClass": "m-medium",
         "buildConfiguration": "Release",
-        "image": "latest"
+        "image": "latest",
+        "bundleIdentifier": "com.enesoy.gradwizard"
+      },
+      "appStoreConnect": {
+        "appleId": "6741734068",
+        "ascAppId": "6741734068",
+        "sku": "EX1739107076939"
       }
     }
   }
 }
+
+
 
